@@ -18,6 +18,7 @@ import ModeSelectionScreen from './app/screens/ModeSelectionScreen';
 import VideoTranslationScreen from './app/screens/VideoTranslationScreen';
 import ProfileScreen from './app/screens/ProfileScreen';
 import WelcomeScreen from './app/screens/WelcomeScreen';
+import LearnMoreScreen from './app/screens/LearnMoreScreen';
 
 // Create a Stack navigator
 const Stack = createStackNavigator();
@@ -103,6 +104,11 @@ const App = () => {
           <Stack.Screen 
             name="Welcome" 
             component={WelcomeScreen} 
+            options={{ headerShown: false }} // Hide header
+          />
+          <Stack.Screen 
+            name="LearnMore" 
+            component={LearnMoreScreen} 
             options={{ headerShown: false }} // Hide header
           />
 

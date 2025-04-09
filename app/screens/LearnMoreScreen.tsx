@@ -26,7 +26,7 @@ export default function LearnMoreScreen() {
             <Video
               ref={videoRef}
               style={[styles.video, { width: screenWidth - 60 }]}
-              source={require('../../assets/videos/tutorial.mp4')}
+              source={require('../assets/tutorial.mp4')}
               useNativeControls
               resizeMode={ResizeMode.CONTAIN}
               isLooping
