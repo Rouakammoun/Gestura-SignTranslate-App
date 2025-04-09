@@ -5,4 +5,15 @@ export type RootStackParamList = {
   ChooseLanguage: undefined;
   TextOrSpeechToSign: undefined;
   SignToText:undefined;
+  VideoTranslation:undefined;
+  Welcome: undefined; // No parameters for this screen
+  SignIn: undefined;
+  SignUp: undefined;
+  Home0: undefined;
+  ModeSelection:undefined;
+  GetStarted:undefined;
+  LearnMore:undefined;
+  Profile:undefined;
+  Settings:undefined;
+
 };

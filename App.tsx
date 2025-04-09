@@ -9,6 +9,15 @@ import ChooseLanguageScreen from './app/screens/ChooseSLScreen';
 import HomeScreen from './app/screens/HomeScreen';
 import TextOrSpeechToSignScreen from './app/screens/TextOrSpeechToSLScreen';
 import SignToTextScreen from './app/screens/SignToTextScreen';
+import HomeScreen0 from './app/screens/HomeScreen0';
+import SettingsScreen from './app/screens/SettingsScreen';
+import SignUpScreen from './app/screens/SignUpScreen';
+import SignInScreen from './app/screens/SignInScreen';
+import GetStartedScreen from './app/screens/GetStartedScreen';
+import ModeSelectionScreen from './app/screens/ModeSelectionScreen';
+import VideoTranslationScreen from './app/screens/VideoTranslationScreen';
+import ProfileScreen from './app/screens/ProfileScreen';
+import WelcomeScreen from './app/screens/WelcomeScreen';
 
 // Create a Stack navigator
 const Stack = createStackNavigator();
@@ -19,7 +28,7 @@ const App = () => {
       {/* SafeAreaView ensures the app content is inside the safe area of the screen */}
       <SafeAreaView style={styles.container}>
         {/* Set up Stack Navigator to handle screen navigation */}
-        <Stack.Navigator initialRouteName="SetLanguage">
+        <Stack.Navigator initialRouteName="HomeScreen0">
           {/* Define each screen and their corresponding component */}
           <Stack.Screen 
             name="SetLanguage" 
@@ -46,6 +55,58 @@ const App = () => {
             component={SignToTextScreen} 
             options={{ headerShown: false }} // Hide header
           />
+          <Stack.Screen 
+            name="GetStarted" 
+            component={GetStartedScreen} 
+            options={{ headerShown: false }} // Hide header
+          />
+          <Stack.Screen 
+            name="HomeScreen0" 
+            component={HomeScreen0} 
+            options={{ headerShown: false }} // Hide header
+          />
+          <Stack.Screen 
+            name="SettingsScreen" 
+            component={SettingsScreen} 
+            options={{ headerShown: false }} // Hide header
+          />
+          <Stack.Screen 
+            name="SignUp" 
+            component={SignUpScreen} 
+            options={{ headerShown: false }} // Hide header
+          />
+          <Stack.Screen 
+            name="SignIn" 
+            component={SignInScreen} 
+            options={{ headerShown: false }} // Hide header
+          />
+          <Stack.Screen 
+            name="ModeSelection" 
+            component={ModeSelectionScreen} 
+            options={{ headerShown: false }} // Hide header
+          />
+          <Stack.Screen 
+            name="VideoTranslation" 
+            component={VideoTranslationScreen} 
+            options={{ headerShown: false }} // Hide header
+          />
+          <Stack.Screen 
+            name="Profile" 
+            component={ProfileScreen} 
+            options={{ headerShown: false }} // Hide header
+          />
+          <Stack.Screen 
+            name="Settings" 
+            component={SettingsScreen} 
+            options={{ headerShown: false }} // Hide header
+          />
+          <Stack.Screen 
+            name="Welcome" 
+            component={WelcomeScreen} 
+            options={{ headerShown: false }} // Hide header
+          />
+
+
         </Stack.Navigator>
       </SafeAreaView>
     </NavigationContainer>

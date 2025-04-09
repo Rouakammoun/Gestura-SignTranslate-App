@@ -3,8 +3,8 @@ import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native'; // Import useNavigation hook
 import { StackNavigationProp } from '@react-navigation/stack'; // Import StackNavigationProp
-import NavBar from '../components/NavBar';
 import { RootStackParamList } from '../navigation/types';
+import NavBar from '../components/NavBar';
 
 // Define the type for navigation props
 type HomeScreenNavigationProp = StackNavigationProp<

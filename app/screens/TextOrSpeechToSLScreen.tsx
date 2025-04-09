@@ -5,13 +5,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import NavBar from '../components/NavBar';
 import { SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native'; // Import useNavigation hook
+import { RootStackParamList } from '../navigation/types'; // Ensure this is defined
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+// Define the type for navigation props
+type TextOrSpeechToSignScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'TextOrSpeechToSign'>;
 
 const TextOrSpeechToSignScreen = () => {
     const [inputText, setInputText] = useState('');
     const [selectedLanguage, setSelectedLanguage] = useState('en');
 
-    // Navigation hook
-    const navigation = useNavigation();
+    // Navigation hook with the correct type
+    const navigation = useNavigation<TextOrSpeechToSignScreenNavigationProp>();
 
     // Toggle between Arabic, French, and English
     const toggleLanguage = () => {
@@ -68,7 +73,7 @@ const TextOrSpeechToSignScreen = () => {
             <View style={{
                 flexDirection: 'row',
                 width: '80%',
-                height: '12%',
+                height: '8%',
                 backgroundColor: '#FFFFFF',
                 borderRadius: 20,
                 paddingHorizontal: 15,
