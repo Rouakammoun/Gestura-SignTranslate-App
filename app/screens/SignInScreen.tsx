@@ -18,9 +18,6 @@ type SignInScreenNavigationProp = StackNavigationProp<RootStackParamList, 'SignI
 export default function SignInScreen() {
   const navigation = useNavigation<SignInScreenNavigationProp>();
   
-    // Function to navigate to the Sign to Text/Speech screen
-    
-
   const [credentials, setCredentials] = useState({
     email: '',
     password: '',
@@ -33,15 +30,37 @@ export default function SignInScreen() {
 
   const handleSignIn = async () => {
     if (!credentials.email || !credentials.password) return; // Ensure fields are filled
-  
+
     try {
       setIsLoading(true); // Set loading state
-      console.log('Signing in with:', credentials); 
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call or process
-  
-      navigation.replace('Home'); // Navigate to GetStarted
+      console.log('Signing in with:', credentials);
+
+      // Sending data to the backend
+      const response = await fetch('http://10.0.2.2:5000/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password,
+        }),
+      });
+
+      const data = await response.json();
+      console.log(data); // Log the server response
+
+      if (response.ok) {
+        // Successful login
+        console.log('Login successful:', data);
+        navigation.replace('Home'); // Navigate to the Home screen after successful login
+      } else {
+        // If the login fails, show the error message
+        Alert.alert('Login Failed', data.error || 'Invalid credentials. Please try again.');
+      }
     } catch (error) {
-      Alert.alert('Sign In Failed', (error as Error).message);
+      console.error('Error during login:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again later.');
     } finally {
       setIsLoading(false); // Reset loading state
     }

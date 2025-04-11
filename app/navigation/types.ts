@@ -15,5 +15,6 @@ export type RootStackParamList = {
   LearnMore:undefined;
   Profile:undefined;
   Settings:undefined;
+  Feedback:undefined;
 
 };

@@ -18,6 +18,7 @@ import GetStartedScreen from '../screens/GetStartedScreen';
 import LearnMoreScreen from '../screens/LearnMoreScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import FeedbackScreen from '../screens/FeedbackScreen';
 
 // Create a stack navigator with defined types
 const Stack = createStackNavigator<RootStackParamList>();
@@ -41,6 +42,7 @@ const AppNavigator = () => {
         <Stack.Screen name="LearnMore" component={LearnMoreScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="Feedback" component={FeedbackScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

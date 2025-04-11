@@ -20,34 +20,78 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
     acceptedTerms: false,
   });
 
+  const [isLoading, setIsLoading] = useState(false);
+
   // Handle form field changes
   const handleChange = (name: keyof typeof form, value: string | boolean) => {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle form submission
-  const handleSubmit = () => {
+  // Handle form submission and backend API call
+  const handleSubmit = async () => {
     // Check if passwords match
     if (form.password !== form.confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
-
+  
     // Check if email is valid
     const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailPattern.test(form.email)) {
       Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
-
+  
     // Check if password meets the minimum length
     if (form.password.length < 8) {
       Alert.alert('Error', 'Password should be at least 8 characters');
       return;
     }
-
-    console.log('Signing up with:', form);
-    navigation.replace('Welcome'); // Navigate to GetStartedScreen after successful sign-up
+  
+    // Check if the user has accepted the terms
+    if (!form.acceptedTerms) {
+      Alert.alert('Error', 'You must accept the terms and conditions');
+      return;
+    }
+  
+    // Prepare data for submission
+    const userData = {
+      name: form.name,
+      email: form.email,
+      password: form.password,
+      acceptedTerms: form.acceptedTerms,  // Ensure acceptedTerms is being sent
+    };
+  
+    // Log the data being sent to the server
+    console.log('Submitting user data:', userData);
+  
+    setIsLoading(true);
+  
+    try {
+      const response = await fetch('http://10.0.2.2:5000/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+      
+      const data = await response.json();
+      console.log('Server response:', data);  // Log the server response
+      
+      if (!response.ok) {
+        // Handle errors with more detail
+        Alert.alert('Error', data.error || 'Something went wrong. Please try again.');
+      } else {
+        console.log('Signup successful:', data);
+        navigation.replace('Welcome'); // Navigate to Welcome screen after successful signup
+      }
+    } catch (error) {
+      console.error('Error during sign up:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Determine if the form is valid for submission
@@ -76,8 +120,6 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
       resizeMode="cover"
     >
       <View style={styles.container}>
-    
-
         <View style={styles.card}>
           <Text style={styles.title}>Gestura</Text>
 
@@ -120,6 +162,7 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
             >
               {form.acceptedTerms && <View style={styles.checkboxChecked} />}
             </TouchableOpacity>
+
             <Text style={styles.termsText}>
               I accept the terms and conditions
             </Text>
@@ -128,9 +171,9 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
           <TouchableOpacity
             style={[styles.button, !isFormValid && styles.buttonDisabled]}
             onPress={handleSubmit}
-            disabled={!isFormValid}
+            disabled={!isFormValid || isLoading}
           >
-            <Text style={styles.buttonText}>SIGN UP</Text>
+            <Text style={styles.buttonText}>{isLoading ? 'Signing Up...' : 'SIGN UP'}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -144,6 +187,8 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
     </ImageBackground>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   background: {
