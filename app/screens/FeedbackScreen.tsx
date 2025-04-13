@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#333',
     textAlign: 'center',
-    marginVertical: 40,
+    marginVertical: 60,
   },
   subtitle: {
     fontSize: 18,

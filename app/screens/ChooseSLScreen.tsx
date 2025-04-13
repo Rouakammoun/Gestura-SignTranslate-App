@@ -24,7 +24,7 @@ const ChooseLanguageScreen = () => {
 
   return (
     <LinearGradient
-      colors={['#88C5A6', '#88C5A6', '#396F7A']}
+      colors={['#88C5A6', '#88C5A6']}
       style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
     >
       {/* Close button */}
@@ -38,7 +38,7 @@ const ChooseLanguageScreen = () => {
           style={{
             fontSize: 24,
             color: '#003C47',
-            backgroundColor: '#A2E9C5',
+            backgroundColor: '#FFFF',
             paddingVertical: 10,
             paddingHorizontal: 50,
             borderRadius: 20,
@@ -50,19 +50,19 @@ const ChooseLanguageScreen = () => {
 
       {/* Language buttons */}
       <TouchableOpacity onPress={goToSignToText} style={{ marginVertical: 10, width: '60%' }}>
-        <LinearGradient colors={['#396F7A', '#88C5A6']} style={{ paddingVertical: 15, borderRadius: 30, alignItems: 'center' }}>
+        <LinearGradient colors={['#396F7A', '#396F7A']} style={{ paddingVertical: 15, borderRadius: 30, alignItems: 'center' }}>
           <Text style={{ color: '#FFFFFF', fontSize: 20 }}>TunSL</Text>
         </LinearGradient>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={goToSignToText} style={{ marginVertical: 10, width: '60%' }}>
-        <LinearGradient colors={['#396F7A', '#88C5A6']} style={{ paddingVertical: 15, borderRadius: 30, alignItems: 'center' }}>
+        <LinearGradient colors={['#396F7A', '#396F7A']} style={{ paddingVertical: 15, borderRadius: 30, alignItems: 'center' }}>
           <Text style={{ color: '#FFFFFF', fontSize: 20 }}>ArSL</Text>
         </LinearGradient>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={goToSignToText} style={{ marginVertical: 10, width: '60%' }}>
-        <LinearGradient colors={['#396F7A', '#88C5A6']} style={{ paddingVertical: 15, borderRadius: 30, alignItems: 'center' }}>
+        <LinearGradient colors={['#396F7A', '#396F7A']} style={{ paddingVertical: 15, borderRadius: 30, alignItems: 'center' }}>
           <Text style={{ color: '#FFFFFF', fontSize: 20 }}>ASL</Text>
         </LinearGradient>
       </TouchableOpacity>

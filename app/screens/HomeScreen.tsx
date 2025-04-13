@@ -1,15 +1,15 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native'; // Import useNavigation hook
-import { StackNavigationProp } from '@react-navigation/stack'; // Import StackNavigationProp
-import { RootStackParamList } from '../navigation/types';
-import NavBar from '../components/NavBar';
+import React from "react";
+import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from "@react-navigation/native"; // Import useNavigation hook
+import { StackNavigationProp } from "@react-navigation/stack"; // Import StackNavigationProp
+import { RootStackParamList } from "../navigation/types";
+import NavBar from "../components/NavBar";
 
 // Define the type for navigation props
 type HomeScreenNavigationProp = StackNavigationProp<
   RootStackParamList, // RootStackParamList should be defined elsewhere, defining all the screen names in your navigation
-  'Home' // This is the current screen name
+  "Home" // This is the current screen name
 >;
 
 const HomeScreen = () => {
@@ -17,17 +17,17 @@ const HomeScreen = () => {
 
   // Function to navigate to the Sign to Text/Speech screen
   const goToSignToText = () => {
-    navigation.navigate('ChooseLanguage'); // Replace with your actual screen name
+    navigation.navigate("ChooseLanguage"); // Replace with your actual screen name
   };
 
   // Function to navigate to the Text/Speech to Sign screen
   const goToTextToSign = () => {
-    navigation.navigate('TextOrSpeechToSign'); // Replace with your actual screen name
+    navigation.navigate("TextOrSpeechToSign"); // Replace with your actual screen name
   };
 
   // Function to navigate to the Video Translation screen
   const goToVideoTranslation = () => {
-    navigation.navigate('VideoTranslation'); // Replace with your actual screen name
+    navigation.navigate("VideoTranslation"); // Replace with your actual screen name
   };
 
   return (
@@ -37,7 +37,7 @@ const HomeScreen = () => {
         <View style={styles.headerContent}>
           <View style={styles.circleIconContainer}>
             <Image
-              source={require('../assets/Hand_signs-removebg-preview.png')}
+              source={require("../assets/Hand_signs-removebg-preview.png")}
               style={styles.handIcon}
             />
           </View>
@@ -46,7 +46,10 @@ const HomeScreen = () => {
       </View>
 
       {/* Gradient Background Container */}
-      <LinearGradient colors={['#88C5A6', '#396F7A']} style={styles.gradientContainer}>
+      <LinearGradient
+        colors={["#88C5A6", "#88C5A6"]}
+        style={styles.gradientContainer}
+      >
         {/* Service Bar */}
         <View style={styles.serviceBar}>
           <Text style={styles.serviceText}>Three Main Services</Text>
@@ -79,88 +82,88 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   header: {
-    backgroundColor: '#FFFFFF',
-    height: '17.8%',
+    backgroundColor: "#FFFFFF",
+    height: "17.8%",
     paddingHorizontal: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   circleIconContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 75,
-    borderWidth: 15,
-    borderColor: '#88C5A6',
+    backgroundColor: "#FFFFFF",
+    borderRadius: 80,
+    borderWidth: 20,
+    borderColor: "#88C5A6",
     padding: 20,
     marginRight: -60,
     marginLeft: 0,
     marginTop: 30,
     marginBottom: -20,
-    position: 'absolute',
+    position: "absolute",
     left: -180,
     top: -50,
     zIndex: 1,
   },
   handIcon: {
-    width: 80,
-    height: 80,
+    width: 75,
+    height: 75,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#3B3B3B',
+    fontWeight: "bold",
+    color: "#3B3B3B",
     right: -150,
     top: 20,
-    position: 'absolute',
+    position: "absolute",
   },
   gradientContainer: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 20,
   },
   serviceBar: {
-    backgroundColor: '#00819E',
+    backgroundColor: "#00819E",
     borderRadius: 20,
     marginVertical: 10,
     paddingVertical: 5,
     paddingHorizontal: 20,
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
     marginRight: 20,
     marginBottom: 20,
   },
   serviceText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   button: {
     top: 70,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#00819E',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#00819E",
     borderRadius: 30,
     paddingVertical: 30,
     paddingHorizontal: 20,
     marginVertical: 20,
-    width: '90%',
+    width: "90%",
   },
   circle: {
     width: 30,
     height: 30,
     borderRadius: 30,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     marginRight: 15,
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });
 
