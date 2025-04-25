@@ -64,3 +64,21 @@ yarn-error.log
 
 # testing
 /coverage
+
+# Python Virtual Environment
+/venv/
+gestura-backend/venv/
+
+# Expo Cache / Build output
+/.expo/
+dist/
+web-build/
+
+# VS Code workspace settings
+/.vscode/
+
+# Local environment variables
+.env*.local
+
+# Typescript build info
+*.tsbuildinfo
