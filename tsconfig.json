@@ -1,0 +1,17 @@
+// {
+//   "extends": "expo/tsconfig.base",
+//   "compilerOptions": {
+//     "strict": true
+//   }
+// }
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "module": "commonjs", 
+    "target": "es6",
+    "moduleResolution": "node", 
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  }
+}
