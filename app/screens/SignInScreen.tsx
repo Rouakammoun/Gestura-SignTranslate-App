@@ -12,6 +12,8 @@ import { InputField } from '../components/InputField';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type SignInScreenNavigationProp = StackNavigationProp<RootStackParamList, 'SignIn'>;
 
@@ -36,7 +38,7 @@ export default function SignInScreen() {
       console.log('Signing in with:', credentials);
 
       // Sending data to the backend
-      const response = await fetch('http://10.0.2.2:5000/signin', {
+      const response = await fetch('http://192.168.1.186:5000/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -53,6 +55,8 @@ export default function SignInScreen() {
       if (response.ok) {
         // Successful login
         console.log('Login successful:', data);
+        await AsyncStorage.setItem('token', data.token);
+        console.log('Token stored!');
         navigation.replace('Home'); // Navigate to the Home screen after successful login
       } else {
         // If the login fails, show the error message
@@ -76,7 +80,7 @@ export default function SignInScreen() {
     height: 50,
     fontSize: 16,
   };
-
+  const [showPassword, setShowPassword] = useState(false);
   return (
     <ImageBackground
       source={require('../assets/background.png')}
@@ -97,14 +101,23 @@ export default function SignInScreen() {
             inputStyle={inputStyles}
           />
 
-          <InputField
-            placeholder="Password"
-            value={credentials.password}
-            onChangeText={(text) => handleChange('password', text)}
-            secureTextEntry
-            autoComplete="password"
-            inputStyle={inputStyles}
-          />
+<InputField
+  placeholder="Password"
+  value={credentials.password}
+  onChangeText={(text) => handleChange('password', text)}
+  secureTextEntry={!showPassword}
+  autoComplete="password"
+  inputStyle={inputStyles}
+  rightIcon={(
+    <TouchableOpacity onPress={() => setShowPassword(prev => !prev)}>
+      <Ionicons
+        name={showPassword ? 'eye-off' : 'eye'}
+        size={24}
+        color="#00819E"
+      />
+    </TouchableOpacity>
+  )}
+/>
 
           <View style={styles.divider} />
 

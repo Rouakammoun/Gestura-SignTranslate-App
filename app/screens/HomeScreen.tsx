@@ -17,7 +17,7 @@ const HomeScreen = () => {
 
   // Function to navigate to the Sign to Text/Speech screen
   const goToSignToText = () => {
-    navigation.navigate("ChooseLanguage"); // Replace with your actual screen name
+    navigation.navigate("ChooseSL"); // Replace with your actual screen name
   };
 
   // Function to navigate to the Text/Speech to Sign screen

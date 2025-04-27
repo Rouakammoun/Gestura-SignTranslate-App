@@ -1,20 +1,18 @@
-// /app/navigation/types.ts
 export type RootStackParamList = {
-  SetLanguage: undefined; // No parameters for this screen
+  SetLanguage: undefined;
+  ChooseSL: undefined;
   Home: undefined;
-  ChooseLanguage: undefined;
   TextOrSpeechToSign: undefined;
-  SignToText:undefined;
-  VideoTranslation:undefined;
-  Welcome: undefined; // No parameters for this screen
-  SignIn: undefined;
-  SignUp: undefined;
+  SignToText: { language: string };
+  GetStarted: undefined;
   Home0: undefined;
-  ModeSelection:undefined;
-  GetStarted:undefined;
-  LearnMore:undefined;
-  Profile:undefined;
-  Settings:undefined;
-  Feedback:undefined;
-
+  Settings: undefined;
+  SignUp: undefined;
+  SignIn: undefined;
+  ModeSelection: undefined;
+  VideoTranslation: undefined;
+  Profile: undefined;
+  Welcome: undefined;
+  LearnMore: undefined;
+  Feedback: undefined;
 };

@@ -4,13 +4,13 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types'; // Your RootStackParamList file
 import { InputField } from '../components/InputField';
 import NavBar from '../components/NavBar'; // Import your NavBar component
-
+import { Ionicons } from '@expo/vector-icons';
 type SignUpScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignUp'>;
 
 interface SignUpScreenProps {
   navigation: SignUpScreenNavigationProp;
 }
-
+const BACKEND = "http://192.168.1.186:5000";
 export default function SignUpScreen({ navigation }: SignUpScreenProps) {
   const [form, setForm] = useState({
     name: '',
@@ -68,7 +68,7 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
     setIsLoading(true);
   
     try {
-      const response = await fetch('http://10.0.2.2:5000/register', {
+        const response =await fetch(`${BACKEND}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +112,8 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
     paddingHorizontal: 15,
     height: 50,
   };
-
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   return (
     <ImageBackground
       source={require('../assets/background.png')}
@@ -139,21 +140,39 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
             inputStyle={inputStyles}
           />
 
-          <InputField
-            placeholder="Password (min 8 characters)"
-            value={form.password}
-            onChangeText={(text) => handleChange('password', text)}
-            secureTextEntry
-            inputStyle={inputStyles}
-          />
+<InputField
+  placeholder="Password (min 8 characters)"
+  value={form.password}
+  onChangeText={(text) => handleChange('password', text)}
+  secureTextEntry={!showPassword}
+  inputStyle={inputStyles}
+  rightIcon={(
+    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+      <Ionicons
+        name={showPassword ? 'eye-off' : 'eye'}
+        size={24}
+        color="#00819E"
+      />
+    </TouchableOpacity>
+  )}
+/>
 
-          <InputField
-            placeholder="Confirm Password"
-            value={form.confirmPassword}
-            onChangeText={(text) => handleChange('confirmPassword', text)}
-            secureTextEntry
-            inputStyle={inputStyles}
-          />
+<InputField
+  placeholder="Confirm Password"
+  value={form.confirmPassword}
+  onChangeText={(text) => handleChange('confirmPassword', text)}
+  secureTextEntry={!showConfirmPassword}
+  inputStyle={inputStyles}
+  rightIcon={(
+    <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+      <Ionicons
+        name={showConfirmPassword ? 'eye-off' : 'eye'}
+        size={24}
+        color="#00819E"
+      />
+    </TouchableOpacity>
+  )}
+/>
 
           <View style={styles.termsContainer}>
             <TouchableOpacity

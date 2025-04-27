@@ -1,4 +1,4 @@
-import { TextInput, StyleSheet, TextStyle, ViewStyle } from 'react-native';
+import { TextInput, StyleSheet, TextStyle, View, ViewStyle } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
 
 type InputFieldProps = {
@@ -10,8 +10,9 @@ type InputFieldProps = {
   autoComplete?: 'email' | 'password' | 'name' | 'username' | 'new-password';
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   minLength?: number;
-  containerStyle?: ViewStyle;  // For the wrapper view
-  inputStyle?: TextStyle;     // For the TextInput itself
+  containerStyle?: ViewStyle;
+  inputStyle?: TextStyle;
+  rightIcon?: React.ReactNode; // 👈 added
 };
 
 export const InputField = ({
@@ -23,37 +24,49 @@ export const InputField = ({
   autoCapitalize = 'none',
   containerStyle = {},
   inputStyle = {},
+  rightIcon,
 }: InputFieldProps) => {
   const { colors } = useTheme();
 
   return (
-    <TextInput
-      style={[
-        styles.input,
-        {
-          backgroundColor: colors.inputBackground,
-          color: colors.text,
-          borderColor: colors.border,
-        },
-        inputStyle, // TextInput specific styles
-      ]}
-      placeholder={placeholder}
-      placeholderTextColor={colors.placeholder}
-      value={value}
-      onChangeText={onChangeText}
-      secureTextEntry={secureTextEntry}
-      keyboardType={keyboardType}
-      autoCapitalize={autoCapitalize}
-    />
+    <View style={[styles.wrapper, containerStyle]}>
+      <TextInput
+        style={[
+          styles.input,
+          {
+            backgroundColor: colors.inputBackground,
+            color: colors.text,
+            borderColor: colors.border,
+          },
+          inputStyle,
+        ]}
+        placeholder={placeholder}
+        placeholderTextColor={colors.placeholder}
+        value={value}
+        onChangeText={onChangeText}
+        secureTextEntry={secureTextEntry}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+      />
+      {rightIcon && <View style={styles.iconContainer}>{rightIcon}</View>}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  wrapper: {
+    position: 'relative',
+  } as ViewStyle,
   input: {
     height: 50,
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 15,
     marginBottom: 15,
-  } as TextStyle, // Explicitly type as TextStyle
+  } as TextStyle,
+  iconContainer: {
+    position: 'absolute',
+    right: 20,
+    top: 13, // adjust based on icon size
+  } as ViewStyle,
 });

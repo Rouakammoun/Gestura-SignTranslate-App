@@ -1,18 +1,26 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { RNCamera } from 'react-native-camera';
-import { Ionicons } from '@expo/vector-icons'; // Ensure this is installed if not already
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import { useNavigation } from '@react-navigation/native';
 import NavBar from '../components/NavBar';
+import { Picker } from '@react-native-picker/picker';
 
 const VideoTranslationScreen = () => {
+  const navigation = useNavigation();
   const [cameraOpen, setCameraOpen] = useState(false);
-  const [videoUri, setVideoUri] = useState<string | null>(null); // Store the video URI
-  const [translatedText, setTranslatedText] = useState(""); // Store translated text
+  const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [translatedText, setTranslatedText] = useState("");
   const cameraRef = useRef<RNCamera | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState('ASL');
+
+  const handleGoBack = () => {
+    navigation.goBack();
+  };
 
   const handleTranslation = () => {
-    // Example translation result
     setTranslatedText("This is the translated text from the video.");
   };
 
@@ -23,9 +31,9 @@ const VideoTranslationScreen = () => {
       quality: 1,
     });
 
-    // Corrected the property from 'cancelled' to 'canceled' and ensured we access the URI properly
     if (result && result.assets && result.assets[0].uri) {
-      setVideoUri(result.assets[0].uri); // Set the video URI from the gallery
+      setVideoUri(result.assets[0].uri);
+      setCameraOpen(false);
     }
   };
 
@@ -33,7 +41,7 @@ const VideoTranslationScreen = () => {
     if (cameraRef.current) {
       const options = { quality: RNCamera.Constants.VideoStabilization.standard, maxDuration: 60 };
       const data = await cameraRef.current.recordAsync(options);
-      setVideoUri(data.uri); // Set the recorded video URI
+      setVideoUri(data.uri);
     }
   };
 
@@ -44,162 +52,224 @@ const VideoTranslationScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <LinearGradient colors={['#88C5A6', '#396F7A']} style={styles.container}>
+      {/* Close button in top left */}
+      <TouchableOpacity onPress={handleGoBack} style={styles.closeButton}>
+        <Ionicons name="close" size={32} color="#003C47" />
+      </TouchableOpacity>
+
+      {/* Header */}
       <View style={styles.headerBox}>
         <Text style={styles.header}>Video Translation</Text>
       </View>
 
-      {/* Select between Uploading from Gallery or Recording Video */}
-      <View style={styles.selectionBox}>
-        <TouchableOpacity style={styles.selectionButton} onPress={pickVideoFromGallery}>
-          <Text style={styles.selectionText}>Upload Video</Text>
+      {/* Video selection buttons */}
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.actionButton} onPress={pickVideoFromGallery}>
+          <Ionicons name="folder-open" size={24} color="#003C47" />
+          <Text style={styles.buttonText}>Upload Video</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.selectionButton} onPress={() => setCameraOpen(true)}>
-          <Text style={styles.selectionText}>Record Video</Text>
+
+      </View>
+
+      {/* Video display area */}
+      <View style={styles.videoContainer}>
+        {cameraOpen && !videoUri ? (
+          <>
+            <RNCamera
+              style={styles.camera}
+              type={RNCamera.Constants.Type.back}
+              ref={cameraRef}
+              captureAudio={true}
+            />
+            <View style={styles.recordingControls}>
+              <TouchableOpacity style={styles.recordButton} onPress={startRecording}>
+                <Ionicons name="radio-button-on" size={40} color="#FF0000" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.stopButton} onPress={stopRecording}>
+                <Ionicons name="square" size={30} color="#003C47" />
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : videoUri ? (
+          <>
+            <Text style={styles.videoPlaceholder}>Video selected</Text>
+            <TouchableOpacity style={styles.translateButton} onPress={handleTranslation}>
+              <Ionicons name="language" size={24} color="#003C47" />
+              <Text style={styles.buttonText}>Translate to Text</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <Text style={styles.videoPlaceholder}>No video selected</Text>
+        )}
+      </View>
+      <View style={styles.pickerContainer}>
+  <Picker
+    selectedValue={selectedLanguage}
+    onValueChange={(itemValue) => setSelectedLanguage(itemValue)}
+    style={styles.picker}
+    dropdownIconColor="#003C47"
+  >
+    <Picker.Item label="ASL (American Sign Language)" value="ASL" />
+    <Picker.Item label="ARSL (Arabic Sign Language)" value="ARSL" />
+    <Picker.Item label="TunSL (Tunisian Sign Language)" value="TunSL" />
+  </Picker>
+</View>
+
+      {/* Translation result */}
+      <View style={styles.textContainer}>
+        <Text style={styles.translatedText}>
+          {translatedText || "Translated text will appear here"}
+        </Text>
+        <TouchableOpacity style={styles.speakButton}>
+          <Ionicons name="volume-high" size={20} color="#003C47" />
         </TouchableOpacity>
       </View>
 
-      {/* Show the camera if the user chooses to record a video */}
-      {cameraOpen && !videoUri ? (
-        <View style={styles.videoBox}>
-          <RNCamera
-            style={styles.camera}
-            type={RNCamera.Constants.Type.back}
-            ref={cameraRef}
-            captureAudio={true}
-          />
-          <TouchableOpacity
-            style={styles.recordButton}
-            onPress={startRecording}
-          >
-            <Ionicons name="videocam" size={30} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.stopButton}
-            onPress={stopRecording}
-          >
-            <Ionicons name="square" size={30} color="white" />
-          </TouchableOpacity>
-        </View>
-      ) : (
-        // Show the uploaded or recorded video
-        videoUri && (
-          <View style={styles.videoBox}>
-            <Text style={styles.videoText}>Video selected/recorded</Text>
-            <TouchableOpacity style={styles.button} onPress={handleTranslation}>
-              <Text style={styles.buttonText}>Translate to Text</Text>
-            </TouchableOpacity>
-          </View>
-        )
-      )}
-
-      {/* Non-editable text box for translated text */}
-      <TextInput
-        style={styles.textBox}
-        value={translatedText}
-        editable={false} // Makes the text box non-editable
-        placeholder="Translated text will appear here"
-      />
-
-      <NavBar/>
-    </View>
+      <NavBar />
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', backgroundColor: '#B7E0D4' },
-  headerBox: {
-    backgroundColor: '#25596E', // Match button color for the header
-    paddingVertical: 10,
-    paddingHorizontal: 50,
-    borderRadius: 30,
-    marginTop: 40,  // Adjust to lower the header
-    marginBottom: 20,
-  },
-  header: { 
-    color: 'white', 
-    fontSize: 20, 
-    fontWeight: 'bold', 
-  },
-  selectionBox: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-around', 
-    width: '80%', 
-    marginVertical: 10 
-  },
-  selectionButton: { 
-    backgroundColor: '#25596E', 
-    paddingVertical: 15, 
-    paddingHorizontal: 30, 
-    borderRadius: 25 
-  },
-  selectionText: { 
-    color: 'white', 
-    fontSize: 16 
-  },
-  videoBox: { 
-    width: '80%', 
-    height: 200, 
-    backgroundColor: 'white', 
-    borderRadius: 10, 
-    marginVertical: 10,
+  container: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingTop: 40,
   },
-  camera: { 
-    width: '100%', 
-    height: '100%' 
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 1,
   },
-  recordButton: { 
-    position: 'absolute', 
-    bottom: 20, 
-    left: '35%' 
+  headerBox: {
+    backgroundColor: '#B2E8D7',
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 20,
+    marginBottom: 40,
+    borderWidth: 2,
+    borderColor: '#A2E9C5',
   },
-  stopButton: { 
-    position: 'absolute', 
-    bottom: 20, 
-    right: '35%' 
+  header: {
+    fontSize: 26,
+    color: '#003C47',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
-  videoText: { 
-    color: 'gray', 
-    fontSize: 16 
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center', // center horizontally
+    width: '100%',
+    marginBottom: 20,
+    gap: 5,
   },
-  button: {
-    backgroundColor: '#25596E', // Button color
-    paddingVertical: 20,
-    paddingHorizontal: 50,
-    borderRadius: 30,
-    margin: 10,
+  actionButton: {
+    backgroundColor: '#B2E8D7',
+    padding: 15,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#A2E9C5',
   },
-  buttonText: { color: 'white', fontSize: 16 },
-  textBox: {
-    width: '80%',
-    height: 100,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    marginVertical: 10,
-    padding: 10,
+  buttonText: {
+    justifyContent:'center',
+    color: '#003C47',
     fontSize: 16,
-    color: 'gray',
-    textAlignVertical: 'top',
-    borderWidth: 1,
-    borderColor: '#ccc',
+    marginLeft: 10,
+    fontWeight: 'bold',
   },
-  navbar: {
+  videoContainer: {
+    width: '80%',
+    height: 120,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,
+    borderColor: '#A2E9C5',
+    marginBottom: 20,
+  },
+  camera: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 15,
+  },
+  recordingControls: {
     position: 'absolute',
     bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: '#fff',
-    borderRadius: 25,
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 10,
-    elevation: 5,
+    justifyContent: 'space-between',
+    width: '60%',
   },
-  navButton: {
+  recordButton: {
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: 40,
+    padding: 10,
+  },
+  stopButton: {
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: 50,
+    padding: 10,
+  },
+  videoPlaceholder: {
+    color: '#003C47',
+    fontSize: 16,
+    marginBottom: 20,
+    fontWeight: 'bold',
+  },
+  translateButton: {
+    backgroundColor: '#B2E8D7',
+    padding: 15,
+    borderRadius: 20,
+    flexDirection: 'row',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#A2E9C5',
   },
+  textContainer: {
+    width: '80%',
+    height:'20%',
+    minHeight: 100,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    borderWidth: 4,
+    borderColor: '#A2E9C5',
+    marginBottom: 20,
+  },
+  translatedText: {
+    color: '#003C47',
+    fontSize: 18,
+    textAlign: 'center',
+  },
+  speakButton: {
+    marginTop: 23,
+    backgroundColor: '#B2E8D7',
+    borderRadius: 50,
+    padding: 10,
+    borderWidth: 2,
+    borderColor: '#A2E9C5',
+  },
+  pickerContainer: {
+    width: '80%',
+    backgroundColor: '#B2E8D7',
+    borderRadius: 20,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#A2E9C5',
+  },
+  picker: {
+    color: '#003C47',
+    height: 50,
+    width: '100%',
+  },
+  
 });
 
 export default VideoTranslationScreen;
