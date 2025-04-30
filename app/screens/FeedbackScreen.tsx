@@ -5,8 +5,10 @@ import NavBar from '../components/NavBar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios, { AxiosError } from 'axios';
 import config from '../Config';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const FeedbackScreen = () => {
+  const { t, isRTL } = useLanguage();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,16 +20,12 @@ const FeedbackScreen = () => {
     const initialize = async () => {
       try {
         const url = await config.getApiBaseUrl();
-        console.log('API Base URL set to:', url);
         setApiBaseUrl(url);
-        
-        // Verify connectivity
         await axios.get(`${url}/auth/ping`, { timeout: 3000 });
         setNetworkError(false);
       } catch (err) {
-        console.error('Initialization error:', err);
         setNetworkError(true);
-        setError('Cannot connect to server. Check your network and API URL.');
+        setError(t('network_error'));
       }
     };
     initialize();
@@ -35,11 +33,11 @@ const FeedbackScreen = () => {
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      setError('Please select a rating');
+      setError(t('rating_required'));
       return;
     }
     if (comment.trim() === '') {
-      setError('Please enter your comments');
+      setError(t('comment_required'));
       return;
     }
 
@@ -48,16 +46,10 @@ const FeedbackScreen = () => {
 
     try {
       const userToken = await AsyncStorage.getItem('userToken');
-      if (!userToken) {
-        throw new Error('Authentication required. Please login again.');
-      }
+      if (!userToken) throw new Error(t('auth_required'));
 
-      const fullUrl = `${apiBaseUrl}/auth/submit-feedback`;
-      console.log('Submitting to:', fullUrl);
-      console.log('Using token:', userToken.slice(0, 10) + '...');
-
-      const response = await axios.post(
-        fullUrl,
+      await axios.post(
+        `${apiBaseUrl}/auth/submit-feedback`,
         { rating, comment },
         {
           headers: {
@@ -68,8 +60,7 @@ const FeedbackScreen = () => {
         }
       );
 
-      console.log('Response:', response.data);
-      Alert.alert('Success', 'Thank you for your feedback!', [
+      Alert.alert(t('success'), t('feedback_thanks'), [
         { 
           text: 'OK', 
           onPress: () => {
@@ -79,35 +70,30 @@ const FeedbackScreen = () => {
         }
       ]);
     } catch (err) {
-      let errorMessage = 'Failed to submit feedback';
-      
-      if (axios.isAxiosError(err)) {
-        // Handle Axios errors
-        console.error('Axios error:', {
-          status: err.response?.status,
-          data: err.response?.data,
-          headers: err.response?.headers
-        });
-        
-        if (err.response?.status === 401) {
-          errorMessage = 'Session expired. Please login again.';
-        } else if (err.response?.status === 404) {
-          errorMessage = 'API endpoint not found. Check server URL.';
-        } else {
-          errorMessage = err.response?.data?.error || errorMessage;
-        }
-        setNetworkError(true);
-      } else if (err instanceof Error) {
-        // Handle native Errors
-        console.error('Generic error:', err.message);
-        errorMessage = err.message;
-      }
-
-      setError(errorMessage);
-      Alert.alert('Error', errorMessage);
+      handleError(err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleError = (err: unknown) => {
+    let errorMessage = t('submit_failed');
+    
+    if (axios.isAxiosError(err)) {
+      if (err.response?.status === 401) {
+        errorMessage = t('session_expired');
+      } else if (err.response?.status === 404) {
+        errorMessage = t('api_not_found');
+      } else {
+        errorMessage = err.response?.data?.error || errorMessage;
+      }
+      setNetworkError(true);
+    } else if (err instanceof Error) {
+      errorMessage = err.message;
+    }
+
+    setError(errorMessage);
+    Alert.alert(t('error'), errorMessage);
   };
 
   const handleEmojiClick = (value: number) => {
@@ -115,28 +101,64 @@ const FeedbackScreen = () => {
     setError('');
   };
 
+  const emojiLabels = [
+    t('very_bad'),
+    t('bad'),
+    t('neutral'),
+    t('good'),
+    t('excellent')
+  ];
+
+  const dynamicStyles = StyleSheet.create({
+    container: {
+      flexGrow: 1,
+      padding: 20,
+      paddingBottom: 80,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: '#333',
+      textAlign: 'center',
+      marginVertical: 20,
+      writingDirection: isRTL ? 'rtl' : 'ltr'
+    },
+    subtitle: {
+      fontSize: 16,
+      marginBottom: 12,
+      color: '#555',
+      fontWeight: '600',
+      textAlign: isRTL ? 'right' : 'left'
+    },
+    input: {
+      textAlign: isRTL ? 'right' : 'left',
+      writingDirection: isRTL ? 'rtl' : 'ltr'
+    },
+    charCounter: {
+      textAlign: isRTL ? 'left' : 'right'
+    }
+  });
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView 
-        contentContainerStyle={styles.container}
+        contentContainerStyle={dynamicStyles.container}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.title}>We Value Your Feedback!</Text>
+        <Text style={dynamicStyles.title}>{t('feedback_title')}</Text>
 
         {networkError && (
           <View style={styles.networkWarning}>
             <Text style={styles.networkWarningText}>
-              Network connection issue detected
+              {t('network_warning')}
             </Text>
           </View>
         )}
 
-        {error ? (
-          <Text style={styles.errorText}>{error}</Text>
-        ) : null}
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <View style={styles.feedbackCard}>
-          <Text style={styles.subtitle}>Please rate your experience:</Text>
+          <Text style={dynamicStyles.subtitle}>{t('rate_experience')}</Text>
 
           <View style={styles.emojiContainer}>
             {['😡', '😞', '😐', '😊', '😁'].map((emoji, index) => (
@@ -150,52 +172,48 @@ const FeedbackScreen = () => {
                 disabled={loading}
               >
                 <Text style={styles.emoji}>{emoji}</Text>
+                <Text style={styles.emojiLabel}>{emojiLabels[index]}</Text>
               </TouchableOpacity>
             ))}
           </View>
+          
           {rating > 0 && (
-            <Text style={styles.ratingText}>
-              Selected: {rating} {rating === 1 ? 'star' : 'stars'}
-            </Text>
+            <View style={styles.selectedContainer}>
+              <Text style={styles.selectedText}>
+                {t('selected')}: {rating}/5
+              </Text>
+            </View>
           )}
         </View>
 
         <View style={styles.feedbackCard}>
-          <Text style={styles.subtitle}>Additional Comments:</Text>
+          <Text style={dynamicStyles.subtitle}>{t('additional_comments')}</Text>
           <TextInput
-            style={styles.input}
-            placeholder="Write your comments here..."
+            style={[styles.input, dynamicStyles.input]}
+            placeholder={t('comments_placeholder')}
             placeholderTextColor="#888"
             multiline
             value={comment}
-            onChangeText={(text) => {
-              setComment(text);
-              setError('');
-            }}
+            onChangeText={setComment}
             maxLength={300}
             editable={!loading}
           />
-          <Text style={styles.charCounter}>
-            {comment.length}/300 characters
+          <Text style={[styles.charCounter, dynamicStyles.charCounter]}>
+            {comment.length}/300 {t('characters')}
           </Text>
         </View>
 
         {loading ? (
-          <ActivityIndicator 
-            size="large" 
-            color="#4CAF50" 
-            style={styles.loader} 
-          />
+          <ActivityIndicator size="large" color="#4CAF50" style={styles.loader} />
         ) : (
           <Button 
             mode="contained" 
             onPress={handleSubmit}
             style={styles.submitButton}
-            contentStyle={styles.submitButtonContent}
-            labelStyle={styles.submitButtonLabel}
             disabled={networkError}
+            loading={loading}
           >
-            Submit Feedback
+            {t('submit_feedback')}
           </Button>
         )}
 
@@ -210,49 +228,43 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f9f9f9',
   },
-  container: {
-    flexGrow: 1,
-    padding: 20,
-    paddingBottom: 80,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#333',
-    textAlign: 'center',
-    marginVertical: 30,
-  },
-  subtitle: {
-    fontSize: 18,
-    marginVertical: 8,
-    color: '#555',
-    fontWeight: '600',
-  },
   emojiContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginVertical: 15,
+    marginVertical: 10,
+    paddingHorizontal: 10,
+    alignItems: 'center',     // Center emojis vertically
+
   },
   emojiButton: {
-    padding: 10,
-    marginHorizontal: 3,
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 8,
     opacity: 0.7,
   },
   selectedEmoji: {
     opacity: 1,
-    borderWidth: 2,
-    borderColor: '#4CAF50',
-    borderRadius: 12,
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
     transform: [{ scale: 1.1 }],
   },
   emoji: {
-    fontSize: 30,
+    fontSize: 28,
+    marginBottom: 4,
   },
-  ratingText: {
-    alignSelf: 'center',
-    fontSize: 16,
-    color: '#4CAF50',
+  emojiLabel: {
+    fontSize: 12,
+    color: '#555',
+    textAlign: 'center',
+  },
+  selectedContainer: {
     marginTop: 10,
+    padding: 8,
+    backgroundColor: '#E8F5E9',
+    borderRadius: 8,
+    alignSelf: 'center',
+  },
+  selectedText: {
+    color: '#2E7D32',
     fontWeight: '600',
   },
   input: {
@@ -268,14 +280,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   charCounter: {
-    alignSelf: 'flex-end',
     color: '#888',
     fontSize: 12,
     marginTop: 5,
   },
   feedbackCard: {
     backgroundColor: '#fff',
-    padding: 20,
+    padding: 16,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -286,22 +297,16 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: 20,
-    backgroundColor: '#88C5A6',
+    backgroundColor: '#4CAF50',
     borderRadius: 8,
-  },
-  submitButtonContent: {
-    height: 50,
-  },
-  submitButtonLabel: {
-    fontSize: 16,
-    fontWeight: '600',
+    paddingVertical: 8,
   },
   loader: {
     marginTop: 20,
     marginBottom: 10,
   },
   errorText: {
-    color: 'red',
+    color: '#D32F2F',
     textAlign: 'center',
     marginBottom: 20,
     fontSize: 16,

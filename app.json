@@ -7,6 +7,7 @@
     "icon": "./app/assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    
     "splash": {
       "image": "./app/assets/splash-icon.png",
       "resizeMode": "contain",
@@ -51,4 +52,5 @@
       "policy": "sdkVersion"
     }
   }
+
 }

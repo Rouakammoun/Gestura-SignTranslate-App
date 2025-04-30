@@ -1,68 +1,95 @@
-import { TouchableOpacity, Text, StyleSheet, TextStyle, ViewStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, TextStyle, ViewStyle, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
 import { ReactNode } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type ButtonProps = {
-  title: string;
+  title?: string; // Optional fallback if translationKey not provided
+  translationKey?: string; // Key for i18n translations
   onPress?: () => void;
   disabled?: boolean;
   type?: 'primary' | 'secondary' | 'text';
   style?: ViewStyle;
   textStyle?: TextStyle;
   icon?: ReactNode;
-  
+  iconPosition?: 'left' | 'right'; // New prop for RTL-aware icon positioning
 };
 
 export const Button = ({
   title,
+  translationKey,
   onPress = () => {},
   disabled = false,
   type = 'primary',
   style = {},
   textStyle = {},
   icon,
+  iconPosition = 'left', // Default to left
 }: ButtonProps) => {
   const { colors } = useTheme();
+  const { t, isRTL } = useLanguage();
 
-  const getButtonStyle = () => {
+  // Enhanced text handling with fallbacks
+  const buttonText = translationKey ? t(translationKey) : title || '';
+
+  // RTL-aware icon position
+  const resolvedIconPosition = isRTL ? 
+    (iconPosition === 'left' ? 'right' : 'left') : 
+    iconPosition;
+
+  const getButtonStyle = (): ViewStyle => {
+    const baseStyle = {
+      backgroundColor: 'transparent',
+      borderWidth: 0,
+    };
+
     switch (type) {
       case 'secondary':
         return {
-          backgroundColor: 'transparent',
+          ...baseStyle,
           borderColor: colors.primary,
           borderWidth: 1,
         };
       case 'text':
-        return {
-          backgroundColor: 'transparent',
-          borderWidth: 0,
-        };
-      default:
+        return baseStyle;
+      default: // primary
         return {
           backgroundColor: disabled ? colors.disabled : colors.primary,
         };
     }
   };
 
-  const getTextStyle = () => {
-    switch (type) {
-      case 'text':
-        return { color: colors.primary };
-      default:
-        return { color: type === 'secondary' ? colors.primary : colors.buttonText };
-    }
+  const getTextStyle = (): TextStyle => {
+    return {
+      color: type === 'text' || type === 'secondary' ? 
+        colors.primary : 
+        colors.buttonText,
+      textAlign: 'center',
+      writingDirection: isRTL ? 'rtl' : 'ltr',
+    };
   };
 
   return (
     <TouchableOpacity
-      style={[styles.button, getButtonStyle(), style]}
+      style={[
+        styles.button, 
+        getButtonStyle(), 
+        style,
+        icon ? { flexDirection: resolvedIconPosition === 'left' ? 'row' : 'row-reverse' } : {}
+      ]}
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.7}
+      accessibilityLabel={buttonText}
     >
-      
-      <Text style={[styles.text, getTextStyle(), textStyle]} numberOfLines={1}>
-        {title}
+      {icon && <View style={styles.iconContainer}>{icon}</View>}
+      <Text 
+        style={[styles.text, getTextStyle(), textStyle]} 
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+      >
+        {buttonText}
       </Text>
     </TouchableOpacity>
   );
@@ -70,19 +97,23 @@ export const Button = ({
 
 const styles = StyleSheet.create({
   button: {
-    width: '80%',
+    minHeight: 50,
     minWidth: 250,
-    paddingHorizontal: 30,
+    maxWidth: '100%',
+    paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 10,
+    marginVertical: 8,
+    flexDirection: 'row',
   },
   text: {
     fontSize: 16,
     fontWeight: 'bold',
-    textAlign: 'center',
-    
+    flexShrink: 1,
+  },
+  iconContainer: {
+    marginHorizontal: 8,
   },
 });

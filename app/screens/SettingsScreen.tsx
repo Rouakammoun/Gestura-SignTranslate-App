@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; 
 import {
   View, Text, StyleSheet, Image, ScrollView, TextInput,
   TouchableOpacity, Alert, ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, ToastAndroid
@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import NavBar from '../components/NavBar';
 import config from '../Config';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type RootStackParamList = {
   Login: undefined;
@@ -40,6 +41,7 @@ interface FormData {
 
 const SettingsScreen = () => {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
+  const { t, isRTL, setLocale } = useLanguage();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -54,6 +56,16 @@ const SettingsScreen = () => {
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'failed'>('checking');
   const [imageUploadProgress, setImageUploadProgress] = useState(0);
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
+  const [pendingLanguage, setPendingLanguage] = useState<string>('en');
+  const [isEditable, setIsEditable] = useState(false); // Change this based on your conditions
+
+
+
+  const languages = [
+    { label: t('english'), value: 'English', code: 'en' },
+    { label: t('french'), value: 'French', code: 'fr' },
+    { label: t('arabic'), value: 'Arabic', code: 'ar' },
+  ];
 
   const resetToLogin = useCallback(async () => {
     await AsyncStorage.multiRemove(['userToken', 'userData']);
@@ -66,12 +78,10 @@ const SettingsScreen = () => {
       const url = await config.getApiBaseUrl();
       setApiBaseUrl(url);
       
-      // Try to ping server first
       try {
         await axios.get(`${url}/auth/ping`, { timeout: 5000 });
         setConnectionStatus('connected');
         
-        // Only try to fetch fresh data if online
         const serverResponse = await axios.get(`${url}/auth/me`, {
           headers: {
             'Authorization': `Bearer ${await AsyncStorage.getItem('userToken')}`
@@ -82,13 +92,19 @@ const SettingsScreen = () => {
         if (serverResponse.data?.user) {
           const updatedUser = serverResponse.data.user;
           setUserData(updatedUser);
+          const userLanguage = updatedUser.language || 'en';
+          const languageName = 
+            userLanguage === 'fr' ? 'French' : 
+            userLanguage === 'ar' ? 'Arabic' : 'English';
+          
           setFormData({
             name: updatedUser.name,
             email: updatedUser.email,
             phoneNumber: updatedUser.phoneNumber || '',
-            language: updatedUser.language || 'English',
+            language: languageName,
             profileImage: updatedUser.profileImage || ''
           });
+          setPendingLanguage(userLanguage);
           await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
         }
       } catch (error) {
@@ -109,9 +125,13 @@ const SettingsScreen = () => {
   }, [loadDataAndCheckConnection]);
 
   const handleInputChange = (key: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [key]: value }));
+    const newFormData = { ...formData, [key]: value };
+    setFormData(newFormData);
+    
+    // Remove the immediate language change logic here
+    // This way, the language will only switch after the profile update button is pressed
   };
-
+  
   const uploadImageAndGetUrl = async (uri: string): Promise<string | null> => {
     if (!uri) return null;
   
@@ -155,7 +175,7 @@ const SettingsScreen = () => {
       return response.data?.imageUrl || null;
     } catch (error) {
       console.error('Upload error:', error);
-      Alert.alert('Error', 'Failed to upload image');
+      Alert.alert(t('error'), t('upload_failed'));
       return null;
     } finally {
       setTimeout(() => setImageUploadProgress(0), 1500);
@@ -166,7 +186,7 @@ const SettingsScreen = () => {
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permissionResult.granted) {
-        Alert.alert('Permission Required', 'Please grant camera roll permissions');
+        Alert.alert(t('permission_required'), t('camera_permission'));
         return;
       }
 
@@ -183,33 +203,32 @@ const SettingsScreen = () => {
       }
     } catch (error) {
       console.error("Image picking error:", error);
-      Alert.alert('Error', 'Failed to select image');
+      Alert.alert(t('error'), t('image_selection_failed'));
     }
   };
 
   const handleSubmit = async () => {
     if (connectionStatus !== 'connected') {
       Alert.alert(
-        'Offline Mode',
-        'You need to be online to save changes. Please check your internet connection.',
+        t('offline_mode'),
+        t('offline_message'),
         [
-          { text: 'OK', onPress: () => {} },
-          { text: 'Retry Connection', onPress: loadDataAndCheckConnection }
+          { text: t('ok'), onPress: () => {} },
+          { text: t('retry_connection'), onPress: loadDataAndCheckConnection }
         ]
       );
       return;
     }
-
+  
     if (!formData.name.trim()) {
-      Alert.alert('Error', 'Name cannot be empty');
+      Alert.alert(t('error'), t('name_required'));
       return;
     }
-
+  
     try {
       setIsSaving(true);
       Keyboard.dismiss();
-
-      // Upload image first if a new one was selected
+  
       let profileImageUrl = formData.profileImage;
       if (localImageUri && localImageUri !== userData?.profileImage) {
         const uploadedUrl = await uploadImageAndGetUrl(localImageUri);
@@ -217,14 +236,20 @@ const SettingsScreen = () => {
           profileImageUrl = uploadedUrl;
         }
       }
-
+  
+      const selectedLanguage = languages.find(lang => lang.value === formData.language);
+      const languageCode = selectedLanguage ? selectedLanguage.code : 'en';
+  
+      // Change language after profile update
+      setLocale(languageCode);
+  
       const payload = {
         name: formData.name.trim(),
         phoneNumber: formData.phoneNumber || null,
-        language: formData.language || null,
+        language: languageCode,
         profileImage: profileImageUrl || null
       };
-
+  
       const response = await axios.put(
         `${apiBaseUrl}/auth/update-profile`,
         payload,
@@ -235,7 +260,7 @@ const SettingsScreen = () => {
           }
         }
       );
-
+  
       if (response.data?.user) {
         const updatedUser = response.data.user;
         setUserData(updatedUser);
@@ -243,33 +268,78 @@ const SettingsScreen = () => {
           name: updatedUser.name,
           email: updatedUser.email,
           phoneNumber: updatedUser.phoneNumber || '',
-          language: updatedUser.language || 'English',
+          language: formData.language, // Keep the display language name
           profileImage: updatedUser.profileImage || ''
         });
         await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
         setLocalImageUri(null);
         
-        ToastAndroid.show('Profile updated successfully!', ToastAndroid.SHORT);
+        ToastAndroid.show(t('profile_updated'), ToastAndroid.SHORT);
       }
     } catch (error) {
       console.error('Update error:', error);
-      let errorMessage = 'Failed to update profile';
+      let errorMessage = t('update_failed');
       if (axios.isAxiosError(error)) {
         errorMessage = error.response?.data?.error || error.message;
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
-      Alert.alert('Update Error', errorMessage);
+      Alert.alert(t('error'), errorMessage);
     } finally {
       setIsSaving(false);
     }
   };
+  
+  
+  const dynamicStyles = StyleSheet.create({
+    container: {
+      paddingTop: Platform.OS === 'android' ? 25 : 40,
+    },
+    header: {
+      flexDirection: isRTL ? 'row-reverse' : 'row',
+    },
+    infoItem: {
+      flexDirection: 'column',
+      marginBottom: 18,
+    },
+    label: {
+      textAlign: isRTL ? 'right' : 'left',
+      marginBottom: 8,
+      fontWeight: '500',
+      fontSize: 14,
+      color: '#555',
+    },
+    input: {
+      textAlign: isRTL ? 'right' : 'left',
+      backgroundColor: '#FFFFFF',
+      borderRadius: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 15,
+      fontSize: 16,
+      borderWidth: 1,
+      borderColor: '#CED4DA',
+      color: '#333',
+      width: '100%',
+    },
+    sectionTitle: {
+      textAlign: isRTL ? 'right' : 'left',
+    },
+    picker: {
+      textAlign: isRTL ? 'right' : 'left',
+    },
+    buttonRow: {
+      flexDirection: isRTL ? 'row-reverse' : 'row',
+    },
+    offlineBar: {
+      flexDirection: isRTL ? 'row-reverse' : 'row',
+    }
+  });
 
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#25596E" />
-        <Text>Loading settings...</Text>
+        <Text>{t('loading_settings')}</Text>
       </View>
     );
   }
@@ -277,9 +347,9 @@ const SettingsScreen = () => {
   if (!userData) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Could not load user data.</Text>
+        <Text>{t('load_user_error')}</Text>
         <TouchableOpacity onPress={resetToLogin} style={styles.button}>
-          <Text style={styles.buttonText}>Go to Login</Text>
+          <Text style={styles.buttonText}>{t('go_to_login')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -294,27 +364,27 @@ const SettingsScreen = () => {
         style={{ flex: 1 }}
       >
         <ScrollView 
-          style={styles.container} 
+          style={[styles.container, dynamicStyles.container]} 
           keyboardShouldPersistTaps="handled"
         >
           {connectionStatus === 'failed' && (
-            <View style={styles.offlineBar}>
-              <Text style={styles.offlineText}>Offline - Using cached data</Text>
+            <View style={[styles.offlineBar, dynamicStyles.offlineBar]}>
+              <Text style={styles.offlineText}>{t('offline_mode')}</Text>
               <TouchableOpacity 
                 onPress={loadDataAndCheckConnection}
                 style={styles.retryButton}
               >
-                <Text style={styles.retryButtonText}>Retry Connection</Text>
+                <Text style={styles.retryButtonText}>{t('retry_connection')}</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          <View style={styles.header}>
-            <Text style={styles.profile}>Profile</Text>
+          <View style={[styles.header, dynamicStyles.header]}>
+            <Text style={styles.profile}>{t('profile')}</Text>
             <TouchableOpacity onPress={() => {
-              Alert.alert('Update Profile Picture', 'Choose an option', [
-                { text: 'Choose from Gallery', onPress: () => handleImagePick(false) },
-                { text: 'Cancel', style: 'cancel' },
+              Alert.alert(t('update_photo'), t('choose_option'), [
+                { text: t('choose_from_gallery'), onPress: () => handleImagePick(false) },
+                { text: t('cancel'), style: 'cancel' },
               ]);
             }}>
               <View>
@@ -335,61 +405,70 @@ const SettingsScreen = () => {
           </View>
 
           <View style={styles.infoSection}>
-            <Text style={styles.sectionTitle}>My Information</Text>
+            <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>{t('my_information')}</Text>
 
-            <View style={styles.infoItem}>
-              <Text style={styles.label}>Full Name:</Text>
+            <View style={[dynamicStyles.infoItem]}>
+              <Text style={[dynamicStyles.label]}>{t('full_name')}:</Text>
               <TextInput
-                style={styles.input}
+                style={[dynamicStyles.input]}
                 value={formData.name}
                 onChangeText={(text) => handleInputChange('name', text)}
-                placeholder="Enter your full name"
+                placeholder={t('enter_name')}
                 maxLength={50}
               />
             </View>
 
-            <View style={styles.infoItem}>
-              <Text style={styles.label}>Email:</Text>
-              <TextInput
-                style={[styles.input, styles.disabledInput]}
-                value={formData.email}
-                editable={false}
-              />
-            </View>
+            <View style={[dynamicStyles.infoItem]}>
+  <Text style={[dynamicStyles.label]}>{t('email')}:</Text>
+  <TextInput
+    style={[dynamicStyles.input, isEditable ? {} : styles.disabledInput]} // Only apply disabledInput when not editable
+    value={formData.email}
+    editable={isEditable} // Set this based on the condition for editability
+  />
+</View>
 
-            <View style={styles.infoItem}>
-              <Text style={styles.label}>Phone Number:</Text>
+
+            <View style={[dynamicStyles.infoItem]}>
+              <Text style={[dynamicStyles.label]}>{t('phone_number')}:</Text>
               <TextInput
-                style={styles.input}
+                style={[dynamicStyles.input]}
                 value={formData.phoneNumber}
                 onChangeText={(text) => handleInputChange('phoneNumber', text)}
-                placeholder="Enter phone number (optional)"
+                placeholder={t('phone_placeholder')}
                 keyboardType="phone-pad"
                 maxLength={15}
               />
             </View>
 
-            <View style={styles.infoItem}>
-              <Text style={styles.label}>App Language:</Text>
+            <View style={[dynamicStyles.infoItem]}>
+              <Text style={[dynamicStyles.label]}>{t('app_language')}:</Text>
               <View style={styles.pickerContainer}>
                 <Picker
                   selectedValue={formData.language}
-                  style={styles.picker}
+                  style={[styles.picker, dynamicStyles.picker]}
                   onValueChange={(value) => handleInputChange('language', value)}
-                  prompt="Select Language"
+                  prompt={t('select_language')}
                 >
-                  <Picker.Item label="English" value="English" />
-                  <Picker.Item label="French" value="French" />
-                  <Picker.Item label="Arabic" value="Arabic" />
+                  {languages.map((lang) => (
+                    <Picker.Item 
+                      key={lang.value} 
+                      label={lang.label} 
+                      value={lang.value} 
+                    />
+                  ))}
                 </Picker>
               </View>
             </View>
 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <View style={[dynamicStyles.buttonRow, { justifyContent: 'space-between', marginTop: 20 }]}>
               <TouchableOpacity
                 style={[
                   styles.button, 
-                  { flex: 1, marginRight: 10 },
+                  { 
+                    flex: 1, 
+                    marginRight: isRTL ? 0 : 10, 
+                    marginLeft: isRTL ? 10 : 0 
+                  },
                   (connectionStatus !== 'connected' || isSaving) && styles.buttonDisabled
                 ]}
                 onPress={handleSubmit}
@@ -398,7 +477,7 @@ const SettingsScreen = () => {
                 {isSaving ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.buttonText}>Save Changes</Text>
+                  <Text style={styles.buttonText}>{t('save_changes')}</Text>
                 )}
               </TouchableOpacity>
               
@@ -407,7 +486,7 @@ const SettingsScreen = () => {
                   style={[styles.button, { flex: 0.4 }]}
                   onPress={loadDataAndCheckConnection}
                 >
-                  <Text style={styles.buttonText}>Retry</Text>
+                  <Text style={styles.buttonText}>{t('retry')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -471,29 +550,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E0E0E0',
     paddingBottom: 8,
   },
-  infoItem: {
-    marginBottom: 18,
-  },
-  label: {
-    fontWeight: '500',
-    fontSize: 14,
-    marginBottom: 6,
-    color: '#555',
-  },
-  input: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#CED4DA',
-    color: '#333',
-  },
-  disabledInput: {
-    backgroundColor: '#E9ECEF',
-    color: '#6C757D',
-  },
   pickerContainer: {
     borderRadius: 8,
     borderWidth: 1,
@@ -505,6 +561,10 @@ const styles = StyleSheet.create({
     height: 50,
     width: '100%',
     color: '#333',
+  },
+  disabledInput: {
+    backgroundColor: '#E9ECEF',
+    color: '#6C757D',
   },
   button: {
     paddingVertical: 14,
@@ -567,4 +627,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SettingsScreen;  
+export default SettingsScreen;
+

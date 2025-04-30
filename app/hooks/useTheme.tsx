@@ -1,28 +1,38 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { Appearance } from 'react-native';
 
+type ThemeColors = {
+  // Base colors (existing)
+  primary: string;
+  background: string;
+  card: string;
+  text: string;
+  border: string;
+  notification: string;
+  placeholder: string;
+  inputBackground: string;
+  buttonText: string;
+  disabled: string;
+  overlay: string;
+  primaryDark?: string;
+  
+  // New navigation colors
+  navBackground: string;
+  navIcon: string;
+  navText: string;
+  navActiveIcon: string;
+  navActiveText: string;
+};
+
 type Theme = {
   dark: boolean;
-  colors: {
-    primary: string;
-    background: string;
-    card: string;
-    text: string;
-    border: string;
-    notification: string;
-    placeholder: string;
-    inputBackground: string;
-    buttonText: string;
-    disabled: string;
-    overlay: string;
-    primaryDark?: string;
-  };
+  colors: ThemeColors;
 };
 
 type ThemeContextType = {
   theme: Theme;
   setTheme: (theme: 'light' | 'dark') => void;
-  colors: Theme['colors'];
+  colors: ThemeColors; // Updated to use ThemeColors type
 };
 
 const lightTheme: Theme = {
@@ -39,6 +49,13 @@ const lightTheme: Theme = {
     buttonText: '#ffffff',
     disabled: '#b3b3b3',
     overlay: 'rgba(255,255,255,0.6)',
+    
+    // New navigation colors (light theme)
+    navBackground: '#ffffff',
+    navIcon: '#6200ee',
+    navText: '#000000',
+    navActiveIcon: '#6200ee',
+    navActiveText: '#6200ee'
   },
 };
 
@@ -57,6 +74,12 @@ const darkTheme: Theme = {
     disabled: '#4d4d4d',
     overlay: 'rgba(0,0,0,0.4)',
     
+    // New navigation colors (dark theme)
+    navBackground: '#1e1e1e',
+    navIcon: '#bb86fc',
+    navText: '#e0e0e0',
+    navActiveIcon: '#bb86fc',
+    navActiveText: '#bb86fc'
   },
 };
 
@@ -66,7 +89,6 @@ const ThemeContext = createContext<ThemeContextType>({
   colors: lightTheme.colors,
 });
 
-// Explicitly type the return as JSX.Element
 export const ThemeProvider = ({ children }: { children: ReactNode }): JSX.Element => {
   const colorScheme = Appearance.getColorScheme();
   const [theme, setTheme] = useState<Theme>(colorScheme === 'dark' ? darkTheme : lightTheme);
@@ -81,4 +103,5 @@ export const ThemeProvider = ({ children }: { children: ReactNode }): JSX.Elemen
     </ThemeContext.Provider>
   );
 };
+
 export const useTheme = () => useContext(ThemeContext);
