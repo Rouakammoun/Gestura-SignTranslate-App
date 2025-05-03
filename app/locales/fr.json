@@ -190,5 +190,9 @@
   "translation_complete": "Traduction Terminée",
   "original_text": "Texte Original",
   "translated_text": "Texte Traduit",
-  "translation_failed": "Échec de la traduction. Veuillez réessayer."
+  "translation_failed": "Échec de la traduction. Veuillez réessayer.",
+   "change_picture": "Changer la photo de profil",
+  "saving": "Enregistrement...",
+  "noconnection": "Pas de connexion Internet",
+  "upload_in_progress": "Téléversement de l'image en cours"
 }

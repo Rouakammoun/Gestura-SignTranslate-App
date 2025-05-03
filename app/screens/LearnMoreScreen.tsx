@@ -192,10 +192,10 @@ const LearnMoreScreen = () => {
       writingDirection: isRTL ? 'rtl' : 'ltr',
     },
     buttonContainer: {
-      flexDirection: isRTL ? 'row-reverse' : 'row',
+      flexDirection: isRTL ? 'row' : 'row',
     },
     buttonContent: {
-      flexDirection: isRTL ? 'row-reverse' : 'row',
+      flexDirection: isRTL ? 'row-reverse' : 'row-reverse',
     }
   });
 
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     backgroundColor: '#89c6a7',
     borderRadius: 16,
-    padding: 24,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -287,15 +287,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
     color: '#25596E',
+    textAlign: 'center', // This centers the text horizontally
+    alignSelf: 'center', // This centers the text within its container
+    width: '100%',
   },
   videoContainer: {
-    alignItems: 'center',
+    justifyContent: 'center', // Centers vertically
+    alignItems: 'center', // Centers horizontally
     marginBottom: 24,
+    width: '100%', // Ensure container takes full width
   },
   video: {
     height: 180,
+    width: '90%', // Or set a fixed width like 320
     borderRadius: 12,
     backgroundColor: '#000',
+    alignSelf: 'center', // Additional centering for the video itself
   },
   content: {
     fontSize: 16,
@@ -305,19 +312,35 @@ const styles = StyleSheet.create({
     color: '#25596E',
   },
   buttonContainer: {
-    justifyContent: 'center',
-    gap: 12,
+    flexDirection: 'row',       // Horizontal layout
+    justifyContent: 'center',   // Center horizontally
+    alignItems: 'center',       // Center vertically
+    gap: 2,                    // Space between buttons
+    width: '100%',              // Take full width
+    paddingHorizontal: 10,      // Add side padding
+    marginVertical: 16,         // Vertical spacing
   },
   button: {
     minWidth: 120,
     paddingVertical: 12,
+    paddingHorizontal: 19,      // Added horizontal padding
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#25596E',
+    flex: 1,                    
+    maxWidth: 160,              
   },
   playButton: {
     backgroundColor: '#00819e',
+    minWidth: 100,
+    paddingVertical: 12,
+    paddingHorizontal: 40,      // Added horizontal padding
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,                    
+    maxWidth: 130,          
   },
   backButtonContainer: {
     borderRadius: 8,
@@ -327,15 +350,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 3,
     elevation: 3,
+    flex: 1,                    
+    maxWidth: 160,              
   },
   buttonContent: {
+    flexDirection: 'row',       
     alignItems: 'center',
+    justifyContent: 'center',   
     gap: 8,
   },
   buttonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '500',
+    textAlign: 'center',        
   },
 });
 

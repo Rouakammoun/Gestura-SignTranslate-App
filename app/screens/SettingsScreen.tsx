@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'; 
 import {
   View, Text, StyleSheet, Image, ScrollView, TextInput,
-  TouchableOpacity, Alert, ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, ToastAndroid
+  TouchableOpacity, Alert, ActivityIndicator, Keyboard, KeyboardAvoidingView, 
+  Platform, ToastAndroid
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -56,15 +57,11 @@ const SettingsScreen = () => {
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'failed'>('checking');
   const [imageUploadProgress, setImageUploadProgress] = useState(0);
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
-  const [pendingLanguage, setPendingLanguage] = useState<string>('en');
-  const [isEditable, setIsEditable] = useState(false); // Change this based on your conditions
-
-
 
   const languages = [
-    { label: t('english'), value: 'English', code: 'en' },
-    { label: t('french'), value: 'French', code: 'fr' },
-    { label: t('arabic'), value: 'Arabic', code: 'ar' },
+    { label: t('english'), value: 'English' },
+    { label: t('french'), value: 'French' },
+    { label: t('arabic'), value: 'Arabic' }
   ];
 
   const resetToLogin = useCallback(async () => {
@@ -92,19 +89,13 @@ const SettingsScreen = () => {
         if (serverResponse.data?.user) {
           const updatedUser = serverResponse.data.user;
           setUserData(updatedUser);
-          const userLanguage = updatedUser.language || 'en';
-          const languageName = 
-            userLanguage === 'fr' ? 'French' : 
-            userLanguage === 'ar' ? 'Arabic' : 'English';
-          
           setFormData({
             name: updatedUser.name,
             email: updatedUser.email,
             phoneNumber: updatedUser.phoneNumber || '',
-            language: languageName,
+            language: updatedUser.language || 'English',
             profileImage: updatedUser.profileImage || ''
           });
-          setPendingLanguage(userLanguage);
           await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
         }
       } catch (error) {
@@ -125,11 +116,7 @@ const SettingsScreen = () => {
   }, [loadDataAndCheckConnection]);
 
   const handleInputChange = (key: keyof FormData, value: string) => {
-    const newFormData = { ...formData, [key]: value };
-    setFormData(newFormData);
-    
-    // Remove the immediate language change logic here
-    // This way, the language will only switch after the profile update button is pressed
+    setFormData(prev => ({ ...prev, [key]: value }));
   };
   
   const uploadImageAndGetUrl = async (uri: string): Promise<string | null> => {
@@ -236,28 +223,31 @@ const SettingsScreen = () => {
           profileImageUrl = uploadedUrl;
         }
       }
-  
-      const selectedLanguage = languages.find(lang => lang.value === formData.language);
-      const languageCode = selectedLanguage ? selectedLanguage.code : 'en';
-  
-      // Change language after profile update
-      setLocale(languageCode);
-  
+
+      const userToken = await AsyncStorage.getItem('userToken');
+      if (!userToken) {
+        resetToLogin();
+        return;
+      }
+
       const payload = {
         name: formData.name.trim(),
         phoneNumber: formData.phoneNumber || null,
-        language: languageCode,
+        language: formData.language, // Send full language name
         profileImage: profileImageUrl || null
       };
-  
+
+      console.log('Sending payload:', payload);
+      
       const response = await axios.put(
         `${apiBaseUrl}/auth/update-profile`,
         payload,
         {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${await AsyncStorage.getItem('userToken')}`
-          }
+            'Authorization': `Bearer ${userToken}`
+          },
+          timeout: 10000
         }
       );
   
@@ -268,12 +258,28 @@ const SettingsScreen = () => {
           name: updatedUser.name,
           email: updatedUser.email,
           phoneNumber: updatedUser.phoneNumber || '',
-          language: formData.language, // Keep the display language name
+          language: updatedUser.language || 'English',
           profileImage: updatedUser.profileImage || ''
         });
         await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
         setLocalImageUri(null);
         
+        // Update app locale using mapping
+        interface LanguageCodeMap {
+          English: string;
+          French: string;
+          Arabic: string;
+          [key: string]: string; // Index signature
+        }
+        
+        const languageCodeMap: LanguageCodeMap = {
+          'English': 'en',
+          'French': 'fr',
+          'Arabic': 'ar'
+        };
+        
+        // Then you can use it directly
+        setLocale(languageCodeMap[formData.language]);
         ToastAndroid.show(t('profile_updated'), ToastAndroid.SHORT);
       }
     } catch (error) {
@@ -281,16 +287,18 @@ const SettingsScreen = () => {
       let errorMessage = t('update_failed');
       if (axios.isAxiosError(error)) {
         errorMessage = error.response?.data?.error || error.message;
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
+        console.log('Full error response:', error.response?.data);
+        if (error.response?.status === 401) {
+          resetToLogin();
+          return;
+        }
       }
       Alert.alert(t('error'), errorMessage);
     } finally {
       setIsSaving(false);
     }
   };
-  
-  
+
   const dynamicStyles = StyleSheet.create({
     container: {
       paddingTop: Platform.OS === 'android' ? 25 : 40,
@@ -303,7 +311,7 @@ const SettingsScreen = () => {
       marginBottom: 18,
     },
     label: {
-      textAlign: isRTL ? 'right' : 'left',
+      textAlign: isRTL ? 'left' : 'left',
       marginBottom: 8,
       fontWeight: '500',
       fontSize: 14,
@@ -322,7 +330,7 @@ const SettingsScreen = () => {
       width: '100%',
     },
     sectionTitle: {
-      textAlign: isRTL ? 'right' : 'left',
+      textAlign: isRTL ? 'left' : 'left',
     },
     picker: {
       textAlign: isRTL ? 'right' : 'left',
@@ -419,14 +427,13 @@ const SettingsScreen = () => {
             </View>
 
             <View style={[dynamicStyles.infoItem]}>
-  <Text style={[dynamicStyles.label]}>{t('email')}:</Text>
-  <TextInput
-    style={[dynamicStyles.input, isEditable ? {} : styles.disabledInput]} // Only apply disabledInput when not editable
-    value={formData.email}
-    editable={isEditable} // Set this based on the condition for editability
-  />
-</View>
-
+              <Text style={[dynamicStyles.label]}>{t('email')}:</Text>
+              <TextInput
+                style={[dynamicStyles.input, styles.disabledInput]}
+                value={formData.email}
+                editable={false}
+              />
+            </View>
 
             <View style={[dynamicStyles.infoItem]}>
               <Text style={[dynamicStyles.label]}>{t('phone_number')}:</Text>
@@ -628,4 +635,3 @@ const styles = StyleSheet.create({
 });
 
 export default SettingsScreen;
-

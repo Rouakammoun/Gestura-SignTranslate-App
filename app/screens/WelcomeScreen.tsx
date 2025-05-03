@@ -241,14 +241,16 @@ const styles = StyleSheet.create({
   icon: {
     width: 36,
     height: 36,
+    marginRight: 15,
   },
   primaryButton: {
     backgroundColor: '#25596E',
     borderRadius: 10,
-    paddingVertical: 8,
+    paddingVertical: 15,
     paddingHorizontal: 20,
     minWidth: 120,
     maxWidth: 160,
+    marginLeft: 20,
   },
   secondaryButton: {
     backgroundColor: 'white',
@@ -259,6 +261,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     minWidth: 120,
     maxWidth: 160,
+    marginLeft: 20,
   },
   buttonText: {
     color: 'white',

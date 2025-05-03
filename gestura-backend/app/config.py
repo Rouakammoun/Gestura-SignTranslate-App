@@ -38,7 +38,7 @@ class Config:
     UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif'}
 MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5MB limit
-BASE_URL = 'http://192.168.1.14:5000'  # Change to your actual domain
+BASE_URL = 'http://192.168.100.22:5000'  # Change to your actual domain
 
 class DevelopmentConfig(Config):
     DEBUG = True

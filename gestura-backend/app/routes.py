@@ -131,7 +131,7 @@ def update_profile():
             
         data = request.get_json()
         
-        # Define valid languages
+        # Define valid language names
         VALID_LANGUAGES = ['English', 'French', 'Arabic']
         
         # Clean profile image URL if present
@@ -174,10 +174,7 @@ def update_profile():
 
         if updates:
             db.session.commit()
-            current_app.logger.info(
-                f"User {user.id} updated: {updates.keys()}\n"
-                f"New language: {user.application_language}"
-            )
+            current_app.logger.info(f"User {user.id} updated: {updates.keys()}")
             
         return jsonify({
             'message': 'Profile updated successfully',
@@ -186,7 +183,7 @@ def update_profile():
                 'name': user.name,
                 'email': user.email,
                 'phoneNumber': user.phone_number,
-                'language': user.application_language,
+                'language': user.application_language,  # Returns full name
                 'profileImage': user.profile_image
             }
         }), 200

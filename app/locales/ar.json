@@ -39,7 +39,7 @@
   "sign_to_text": "من الإشارة إلى النص/الكلام",
   "text_to_sign": "من النص/الكلام إلى الإشارة",
   "video_translation": "ترجمة الفيديو",
-  "tutorial_title": "برنامج تعليمي لجيستورا",
+  "tutorial_title": "برنامج تعليمي Gestura",
   "tutorial_description": "شاهد هذا البرنامج التعليمي القصير لتعلم كيفية استخدام جيستورا بفعالية.",
   "play": "تشغيل",
   "pause": "إيقاف مؤقت",
@@ -190,5 +190,8 @@
     "translation_complete": "اكتملت الترجمة",
     "original_text": "النص الأصلي",
     "translated_text": "النص المترجم",
-    "translation_failed": "فشلت الترجمة. الرجاء المحاولة مرة أخرى."
+    "translation_failed": "فشلت الترجمة. الرجاء المحاولة مرة أخرى.",
+     "change_picture": "تغيير صورة الملف الشخصي",
+  "saving": "جارٍ الحفظ...",
+  "translationKey":"translationKey"
 }

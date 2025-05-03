@@ -15,6 +15,7 @@ type ThemeColors = {
   disabled: string;
   overlay: string;
   primaryDark?: string;
+  error: string; 
   
   // New navigation colors
   navBackground: string;
@@ -49,6 +50,7 @@ const lightTheme: Theme = {
     buttonText: '#ffffff',
     disabled: '#b3b3b3',
     overlay: 'rgba(255,255,255,0.6)',
+    error: "error", 
     
     // New navigation colors (light theme)
     navBackground: '#ffffff',
@@ -73,6 +75,8 @@ const darkTheme: Theme = {
     buttonText: '#000000',
     disabled: '#4d4d4d',
     overlay: 'rgba(0,0,0,0.4)',
+    error: "error", 
+
     
     // New navigation colors (dark theme)
     navBackground: '#1e1e1e',

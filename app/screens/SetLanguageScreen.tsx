@@ -458,9 +458,9 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#2D5C74',
-    padding: 20,
+    padding: 15,
     borderRadius: 30,
-    width: '80%',
+    width: '90%',
     height: '60%',
     justifyContent: 'center',
     marginTop: 40,
@@ -469,6 +469,9 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 30,
     marginBottom: 30,
+    textAlign: 'center', // This centers the text horizontally
+    alignSelf: 'center', // This centers the text within its container
+    width: '100%',
   },
   languageOption: {
     justifyContent: 'space-between',
@@ -503,6 +506,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     backgroundColor: '#7FBF9D',
+    alignSelf: 'center', 
   },
   disabledButton: {
     opacity: 0.6,

@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Replace with your computer's IPv4 address and Flask server port
-const LOCAL_IP = '192.168.1.14'; // Change this to your actual IPv4 address
+const LOCAL_IP = '192.168.100.22'; // Change this to your actual IPv4 address
 const PORT = '5000'; // Your Flask server port
 
 // Define the URLs for different platforms (Android/iOS) during development

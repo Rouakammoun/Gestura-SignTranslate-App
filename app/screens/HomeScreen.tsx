@@ -215,20 +215,20 @@ const HomeScreen = () => {
       color: "#3B3B3B",
       top: 20,
       position: "absolute",
-      right: isRTL ? -100 : undefined, // Adjust title position for RTL
+      right: isRTL ? -20 : undefined, // Adjust title position for RTL
       left: isRTL ? undefined : -15,
       textAlign: isRTL ? "right" : "left", // Text alignment for RTL
     },
     serviceBar: {
       backgroundColor: "#00819E",
       borderRadius: 20,
-      marginVertical: 10,
+      marginVertical: isRTL ? 30 : 12,
       paddingVertical: 5,
       paddingHorizontal: 20,
       alignSelf: isRTL ? "flex-start" : "flex-end", // Align the service bar
     },
     button: {
-      flexDirection: isRTL ? "row-reverse" : "row", // Adjust row direction for RTL
+      flexDirection: isRTL ? "row" : "row", // Adjust row direction for RTL
       alignItems: "center",
       backgroundColor: "#00819E",
       borderRadius: 30,
@@ -242,14 +242,14 @@ const HomeScreen = () => {
       height: 30,
       borderRadius: 30,
       backgroundColor: "#FFFFFF",
-      marginLeft: isRTL ? 15 : 0,
-      marginRight: isRTL ? 0 : 15,
+      marginLeft: isRTL ? 10 : 0,
+      marginRight: isRTL ? 15 : 15,
     },
     buttonText: {
       color: "#FFFFFF",
       fontSize: 20,
       fontWeight: "bold",
-      textAlign: isRTL ? "right" : "left", // Text alignment for buttons
+      textAlign: isRTL ? "right" : "right", // Text alignment for buttons
     },
   });
   

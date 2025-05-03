@@ -2,11 +2,12 @@ import { TouchableOpacity, Text, StyleSheet, TextStyle, ViewStyle, View } from '
 import { useTheme } from '../hooks/useTheme';
 import { ReactNode } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { TranslationKey }from '../types/types';
 
 type ButtonProps = {
   title?: string; // Optional fallback if translationKey not provided
-  translationKey?: string; // Key for i18n translations
-  onPress?: () => void;
+  translationKey?: TranslationKey; // Use TranslationKey instead of string
+  onPress?: () => void; 
   disabled?: boolean;
   type?: 'primary' | 'secondary' | 'text';
   style?: ViewStyle;
