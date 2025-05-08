@@ -27,7 +27,7 @@ export default function TextOrSpeechToSignScreen() {
 
   const [inputText, setInputText] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "fr" | "ar">("en");
-  const [selectedSignLanguage, setSelectedSignLanguage] = useState<"ASL" | "FSL" | "ArSL" | "ISL">("ASL");
+  const [selectedSignLanguage, setSelectedSignLanguage] = useState<"ASL" | "FSL" | "ArSL" >("ASL");
   const [loading, setLoading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(null);
@@ -73,7 +73,7 @@ export default function TextOrSpeechToSignScreen() {
   };
 
   const toggleSignLanguage = () => {
-    const signs: ("ASL" | "FSL" | "ArSL" | "ISL")[] = ["ASL", "FSL", "ArSL", "ISL"];
+    const signs: ("ASL" | "FSL" | "ArSL" )[] = ["ASL", "FSL", "ArSL"];
     setSelectedSignLanguage(signs[(signs.indexOf(selectedSignLanguage) + 1) % signs.length]);
   };
 
