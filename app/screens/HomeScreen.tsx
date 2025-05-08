@@ -47,7 +47,7 @@ const HomeScreen = () => {
 
       {/* Gradient Background Container */}
       <LinearGradient
-        colors={["#88C5A6", "#88C5A6"]}
+        colors={["#9DC4BC", "#9DC4BC"]}
         style={styles.gradientContainer}
       >
         {/* Service Bar */}
@@ -64,11 +64,6 @@ const HomeScreen = () => {
         <TouchableOpacity style={styles.button} onPress={goToTextToSign}>
           <View style={styles.circle} />
           <Text style={styles.buttonText}>Text/Speech to Sign</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.button} onPress={goToVideoTranslation}>
-          <View style={styles.circle} />
-          <Text style={styles.buttonText}>Video Translation</Text>
         </TouchableOpacity>
 
         {/* Navigation Bar */}
@@ -99,7 +94,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 80,
     borderWidth: 20,
-    borderColor: "#88C5A6",
+    borderColor: "#9DC4BC",
     padding: 20,
     marginRight: -60,
     marginLeft: 0,

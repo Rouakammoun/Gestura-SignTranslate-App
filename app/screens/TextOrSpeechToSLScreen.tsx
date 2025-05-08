@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -6,223 +6,334 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Image,
+  SafeAreaView,
+  Platform,
 } from "react-native";
-import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import { Ionicons, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import NavBar from "../components/NavBar";
-import { SafeAreaView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { RootStackParamList } from "../navigation/types";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useVideoPlayer, VideoView } from "expo-video";
+import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
-import { Video, ResizeMode } from "expo-av"; // Fix import
+import NavBar from "../components/NavBar";
+import { RootStackParamList } from "../navigation/types";
+import { Animated, Easing } from "react-native";
 
-type TextOrSpeechToSignScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "TextOrSpeechToSign"
->;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, "TextOrSpeechToSign">;
 
-const TextOrSpeechToSignScreen = () => {
+export default function TextOrSpeechToSignScreen() {
+  const navigation = useNavigation<NavigationProp>();
+
   const [inputText, setInputText] = useState("");
-  const [selectedLanguage, setSelectedLanguage] = useState("en");
+  const [selectedLanguage, setSelectedLanguage] = useState<"en" | "fr" | "ar">("en");
+  const [selectedSignLanguage, setSelectedSignLanguage] = useState<"ASL" | "FSL" | "ArSL" | "ISL">("ASL");
   const [loading, setLoading] = useState(false);
+  const [recording, setRecording] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(null);
 
-  const navigation = useNavigation<TextOrSpeechToSignScreenNavigationProp>();
+  const recordingRef = useRef<Audio.Recording | null>(null);
+
+  const player = useVideoPlayer(
+    { uri: videoUri || "" },
+    (p) => {
+      p.play();
+      p.loop = true;
+    }
+  );
+
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (recording) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.4,
+            duration: 700,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 700,
+            easing: Easing.in(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1); // Reset when not recording
+    }
+  }, [recording]);
 
   const toggleLanguage = () => {
-    const languages = ["en", "fr", "ar"];
-    const nextIndex =
-      (languages.indexOf(selectedLanguage) + 1) % languages.length;
-    setSelectedLanguage(languages[nextIndex]);
+    const langs: ("en" | "fr" | "ar")[] = ["en", "fr", "ar"];
+    setSelectedLanguage(langs[(langs.indexOf(selectedLanguage) + 1) % langs.length]);
+  };
+
+  const toggleSignLanguage = () => {
+    const signs: ("ASL" | "FSL" | "ArSL" | "ISL")[] = ["ASL", "FSL", "ArSL", "ISL"];
+    setSelectedSignLanguage(signs[(signs.indexOf(selectedSignLanguage) + 1) % signs.length]);
   };
 
   const handleTranslate = async () => {
     if (!inputText.trim()) {
-      alert('Please enter some text');
+      Alert.alert("Input Error", "Please enter some text");
       return;
     }
-  
-    console.log("Sending text:", inputText); // Verify input text
-  
     setLoading(true);
     try {
-      const body = JSON.stringify({
-        text: inputText,  // Ensure the text is passed correctly here
-        language: selectedLanguage,
+      const response = await fetch("http://192.168.100.21:5000/translate_to_sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: inputText,
+          inputLanguage: selectedLanguage,
+          targetSignLanguage: selectedSignLanguage,
+        }),
       });
-      console.log("Request body:", body); // Log the body to check if text is included
-  
-      const response = await fetch(
-        "https://us-central1-sign-mt.cloudfunctions.net/spoken_text_to_signed_video",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: body,  // Ensure the correct body is sent
-        }
-      );
-      // Handle the response
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Server error: ${errorText}`);
-      }
-  
-      const data = await response.json();
-      console.log("Received response:", data);
-  
-      setVideoUri(data.videoUrl); // Set the video URI
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error('Translation error:', error.message);
-        alert('Translation failed: ' + error.message);
-      } else {
-        console.error('Unexpected error:', error);
-        alert('Unexpected error occurred');
-      }
+
+      if (!response.ok) throw new Error(await response.text());
+
+      const { videoUrl } = await response.json();
+      setVideoUri(videoUrl);
+    } catch (error: any) {
+      Alert.alert("Translation Error", error.message || "Unknown error occurred");
     } finally {
-      setLoading(false); // Hide loader once the API call is done
+      setLoading(false);
     }
   };
-  
 
-  const handleSpeechToSign = () => {
-    Alert.alert("Speech to Sign activated");
+  const startRecording = async () => {
+    try {
+      if (recordingRef.current) {
+        console.warn("Recording already in progress");
+        return;
+      }
+
+      const { granted } = await Audio.requestPermissionsAsync();
+      if (!granted) {
+        Alert.alert("Permission Denied", "Cannot access microphone");
+        return;
+      }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const recording = new Audio.Recording();
+      await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      await recording.startAsync();
+
+      recordingRef.current = recording;
+      setRecording(true);
+    } catch (error) {
+      console.error("Start Recording Error:", error);
+      setRecording(false);
+    }
   };
 
-  const handleClose = () => {
-    navigation.navigate("Home");
+  const stopRecording = async () => {
+    try {
+      if (!recordingRef.current) return;
+
+      await recordingRef.current.stopAndUnloadAsync();
+      const uri = recordingRef.current.getURI();
+
+      const previousRecording = recordingRef.current;
+      recordingRef.current = null;
+      setRecording(false);
+
+      if (uri) {
+        await uploadAudio(uri);
+      }
+
+      previousRecording && previousRecording.setOnRecordingStatusUpdate(null);
+    } catch (error) {
+      console.error("Stop Recording Error:", error);
+      setRecording(false);
+    }
   };
+
+  const uploadAudio = async (uri: string) => {
+    setLoading(true);
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (!fileInfo.exists) throw new Error("Audio file not found");
+
+      const formData = new FormData();
+      formData.append("audio", {
+        uri,
+        name: "audio.wav",
+        type: "audio/wav",
+      } as any);
+
+      formData.append("language", selectedLanguage);
+
+      const response = await fetch("http://192.168.100.21:5000/whisper_transcribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error(await response.text());
+
+      const { text } = await response.json();
+      setInputText(text);
+    } catch (error: any) {
+      Alert.alert("Upload Error", error.message || "Failed to transcribe audio");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSpeechToTextToggle = () => {
+    if (recording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
+  const goHome = () => navigation.navigate("Home");
 
   return (
-    <LinearGradient
-      colors={["#88C5A6", "#396F7A"]}
-      style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-    >
-      <SafeAreaView
-        style={{
-          width: "100%",
-          alignItems: "flex-start",
-          paddingTop: 3,
-          paddingLeft: 10,
-        }}
-      >
-        <TouchableOpacity onPress={handleClose}>
-          <Ionicons name="close-circle" size={40} color="#003C47" />
+    <LinearGradient colors={["#9DC4BC", "#9DC4BC"]} style={{ flex: 1, alignItems: "center", paddingTop: 25 }}>
+      <SafeAreaView style={{ width: "100%", padding: 10 }}>
+        <TouchableOpacity onPress={goHome}>
+          <Ionicons name="close-circle" size={40} color="#004E64" />
         </TouchableOpacity>
       </SafeAreaView>
 
-      <View style={{ marginBottom: 20 }}>
-        <Text
-          style={{
-            fontSize: 24,
-            color: "#003C47",
-            backgroundColor: "#B2E8D7",
-            paddingVertical: 10,
-            paddingHorizontal: 20,
-            borderRadius: 20,
-          }}
-        >
-          Text/Speech to Sign
-        </Text>
-      </View>
-
       <View
         style={{
-          width: "75%",
-          height: "45%",
-          backgroundColor: "#FFFFFF",
+          width: "80%",
+          height: "50%",
+          backgroundColor: "#f4f4f4",
           borderRadius: 30,
+          borderWidth: 5,
+          borderColor: "#004E64",
           justifyContent: "center",
           alignItems: "center",
-          marginBottom: 20,
-          borderWidth: 4,
-          borderColor: "#A2E9C5",
+          position: "relative",
+          padding: 15,
+          overflow: "hidden", // Ensures the video fits within the border radius
         }}
       >
         {loading ? (
-          <ActivityIndicator size="large" color="#003C47" />
+          <ActivityIndicator size="large" color="#004E64" />
         ) : videoUri ? (
-          <Video
-            source={{ uri: videoUri }}
-            rate={1.0}
-            volume={1.0}
-            isMuted={false}
-            resizeMode={ResizeMode.CONTAIN} // Correct ResizeMode
-            shouldPlay
-            useNativeControls
-            style={{ width: "100%", height: "100%", borderRadius: 30 }}
+          <VideoView
+            style={{
+              width: "100%",
+              height: "100%",
+              borderRadius: 30, // Same border radius as the container
+            }}
+            player={player}
+            nativeControls={false}
           />
         ) : (
           <Text style={{ fontSize: 18, color: "#000" }}>
-            Animated Avatar Placeholder
+            Your Sign Language Video will appear here
           </Text>
         )}
+
+        <TouchableOpacity
+          onPress={toggleSignLanguage}
+          style={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            backgroundColor: "#004E64",
+            padding: 10,
+            borderRadius: 20,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <MaterialIcons name="translate" size={18} color="#FFF" />
+          <Text style={{ color: "#FFF", marginLeft: 6, fontSize: 14 }}>
+            {selectedSignLanguage}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View
         style={{
           flexDirection: "row",
-          width: "80%",
-          height: "8%",
-          backgroundColor: "#FFFFFF",
-          borderRadius: 20,
-          paddingHorizontal: 15,
-          alignItems: "center",
+          width: "85%",
+          backgroundColor: "#f4f4f4",
+          borderRadius: 25,
           borderWidth: 3,
-          borderColor: "#A2E9C5",
-          marginBottom: 20,
+          borderColor: "#004E64",
+          padding: 15,
+          alignItems: "center",
+          marginVertical: 30,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 6,
         }}
       >
         <TextInput
-          style={{ flex: 1, fontSize: 18, color: "#000" }}
-          placeholder="Insert Text"
-          placeholderTextColor="#888"
+          style={{ flex: 1, fontSize: 18, color: "#000", paddingLeft: 10 }}
+          placeholder="Enter text"
           value={inputText}
           onChangeText={setInputText}
         />
-        <TouchableOpacity
-          onPress={toggleLanguage}
-          style={{ marginHorizontal: 10 }}
-        >
-          <FontAwesome5 name="language" size={28} color="#003C47" />
-          <Text style={{ fontSize: 12, color: "#003C47", textAlign: "center" }}>
-            {selectedLanguage.toUpperCase()}
-          </Text>
+        <TouchableOpacity onPress={toggleLanguage} style={{ marginHorizontal: 10 }}>
+          <FontAwesome5 name="language" size={24} color="#004E64" />
+          <Text style={{ fontSize: 12, color: "#004E64", textAlign: "center" }}>{selectedLanguage.toUpperCase()}</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleSpeechToSign}
-          style={{ marginHorizontal: 10 }}
-        >
-          <Ionicons name="mic" size={28} color="#003C47" />
+        <TouchableOpacity onPress={handleSpeechToTextToggle} disabled={loading}>
+          {recording ? (
+            <Animated.View
+              style={{
+                transform: [{ scale: pulseAnim }],
+                width: 60,
+                height: 60,
+                borderRadius: 30,
+                backgroundColor: "#f4f4f4",
+                justifyContent: "center",
+                alignItems: "center",
+                borderWidth: 3,
+                borderColor: "#004E64",
+              }}
+            >
+              <Ionicons name="mic" size={30} color="#fff" />
+            </Animated.View>
+          ) : (
+            <Ionicons name="mic" size={30} color="#004E64" />
+          )}
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity
         onPress={handleTranslate}
         style={{
-          backgroundColor: "#003C47",
-          paddingVertical: 10,
-          paddingHorizontal: 40,
-          borderRadius: 20,
-          marginBottom: 30,
-          elevation: 4,
+          position: "absolute",
+          bottom: 90,
+          right: 35,
+          width: 70,
+          height: 70,
+          backgroundColor: "#004E64",
+          borderRadius: 35,
+          alignItems: "center",
+          justifyContent: "center",
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.4,
-          shadowRadius: 5,
+          shadowRadius: 6,
         }}
       >
-        <Text style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "bold" }}>
-          Translate to Avatar
-        </Text>
+        <Ionicons name="arrow-forward-circle" size={40} color="#FFF" />
       </TouchableOpacity>
 
       <NavBar />
     </LinearGradient>
   );
-};
-
-export default TextOrSpeechToSignScreen;
+}

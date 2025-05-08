@@ -21,7 +21,7 @@ const SignToTextScreen: React.FC<Props> = ({ route, navigation }) => {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const [lastPrediction, setLastPrediction] = useState<string | null>(null);
-  const [translatedText, setTranslatedText] = useState('Translated text will appear here');
+  const [translatedText, setTranslatedText] = useState('Hello');
   const [facing, setFacing] = useState<CameraType>('back');
 
   // Flag controlling loop
@@ -85,13 +85,21 @@ const SignToTextScreen: React.FC<Props> = ({ route, navigation }) => {
       const form = new FormData();
       form.append('video', { uri, type: 'video/mp4', name: 'clip.mp4' } as any);
       form.append('language', language);
-      const res = await fetch('http://192.168.1.186:5000/translate_video', {
+      const res = await fetch('http://192.168.100.21:5000/translate_video', {
         method: 'POST', headers: { 'Content-Type': 'multipart/form-data' }, body: form
       });
       const { prediction, confidence } = await res.json();
-      if (prediction && confidence > PREDICTION_THRESHOLD && prediction !== lastPrediction) {
-        setTranslatedText(prev => prev === 'Translated text will appear here' ? prediction : prev + ' ' + prediction);
-        setLastPrediction(prediction);
+      if (
+        prediction &&
+        confidence > PREDICTION_THRESHOLD
+      ) {
+        const lastWord = translatedText.trim().split(' ').slice(-1)[0];
+        if (prediction !== lastWord) {
+          setTranslatedText(prev =>
+            prev === 'Hello' ? prediction : prev + ' ' + prediction
+          );
+          setLastPrediction(prediction);
+        }
       }
     } catch (e) {
       console.error('Translation API error:', e);
@@ -102,9 +110,13 @@ const SignToTextScreen: React.FC<Props> = ({ route, navigation }) => {
   const goHome = () => { activeRef.current = false; navigation.navigate('Home'); };
 
   const speakTranslation = () => {
-    if (translatedText ) {
+    if (translatedText) {
+      let ttsLanguage = 'en-US'; // Default to English
+      if (language === 'ArSL') ttsLanguage = 'ar-SA';
+      else if (language === 'TunSL') ttsLanguage = 'ar-TN';
+  
       Speech.speak(translatedText, {
-        language: language === 'French' ? 'fr-FR' : 'en-US',
+        language: ttsLanguage,
         pitch: 1.1,
         rate: 0.9,
       });
@@ -124,11 +136,11 @@ const SignToTextScreen: React.FC<Props> = ({ route, navigation }) => {
   }
 
   return (
-    <LinearGradient colors={['#88C5A6','#396F7A']} style={styles.container}>
+    <LinearGradient colors={['#9DC4BC','#9DC4BC']} style={styles.container}>
       <TouchableOpacity onPress={goHome} style={styles.closeButton}>
         <Ionicons name="close-circle" size={40} color="#003C47"/>
       </TouchableOpacity>
-      <Text style={styles.title}>Sign To Text ({language})</Text>
+      
 
       <View style={styles.cameraContainer}>
       <CameraView
@@ -171,9 +183,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 10,
   },
-  camera:{flex:1,borderRadius:20,borderWidth:4,borderColor:'#A2E9C5',overflow:'hidden'},
-  toggleButton:{position:'absolute',top:10,left:10,backgroundColor:'#FFF',padding:5,borderRadius:20,borderWidth:2,borderColor:'#A2E9C5'},
-  translationBox:{width:'80%',backgroundColor:'#FFF',borderRadius:20,padding:10,alignItems:'center',borderWidth:2,borderColor:'#A2E9C5'},
+  camera:{flex:1,borderRadius:20,borderWidth:4,borderColor:'#004E64',overflow:'hidden'},
+  toggleButton:{position:'absolute',top:10,left:10,backgroundColor:'#FFF',padding:5,borderRadius:20,borderWidth:2,borderColor:'#004E64'},
+  translationBox:{width:'80%',backgroundColor:'#FFF',borderRadius:20,padding:10,alignItems:'center',borderWidth:2,borderColor:'#004E64'},
   translatedText:{color:'#000',fontSize:16,textAlign:'center'},
   permissionText:{fontSize:18,marginBottom:20},
   permissionButton:{backgroundColor:'#A2E9C5',padding:10,borderRadius:10},

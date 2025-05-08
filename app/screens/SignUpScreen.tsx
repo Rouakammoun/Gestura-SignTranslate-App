@@ -10,7 +10,7 @@ type SignUpScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 
 interface SignUpScreenProps {
   navigation: SignUpScreenNavigationProp;
 }
-const BACKEND = "http://192.168.1.186:5000";
+const BACKEND = "http:///192.168.100.21:5000";
 export default function SignUpScreen({ navigation }: SignUpScreenProps) {
   const [form, setForm] = useState({
     name: '',

@@ -16,7 +16,7 @@ const ChooseSLScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <LinearGradient
-      colors={['#88C5A6', '#88C5A6']}
+      colors={['#9DC4BC', '#9DC4BC']}
       style={styles.container}
     >
       {/* Close Button */}

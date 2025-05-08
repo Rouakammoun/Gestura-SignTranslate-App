@@ -1,43 +1,46 @@
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Keyboard
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/types'; // Assuming you have your navigation types set up
+import { RootStackParamList } from '../navigation/types';
 
-// Define navigation prop type
 type NavBarProps = NativeStackNavigationProp<RootStackParamList>;
 
 const NavBar: React.FC = () => {
-  const navigation = useNavigation<NavBarProps>(); // Hook to get the navigation prop
+  const navigation = useNavigation<NavBarProps>();
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
-  // Handle navigation for Home and Profile screens
-  const navigateToHome = () => {
-    navigation.navigate('Home');
-  };
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', () => {
+      setKeyboardVisible(true);
+    });
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardVisible(false);
+    });
 
-  const navigateToProfile = () => {
-    navigation.navigate('Profile');
-  };
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
-  const navigateToFeedback = () => {
-    navigation.navigate('Feedback');
-  };
+  if (isKeyboardVisible) return null; // ← cacher la NavBar
 
   return (
     <View style={styles.navbar}>
-      {/* Home Button */}
-      <TouchableOpacity style={styles.navButton} onPress={navigateToHome}>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Home')}>
         <Ionicons name="home-outline" size={30} color="#333" />
       </TouchableOpacity>
-      
-      {/* Profile Button */}
-      <TouchableOpacity style={styles.navButton} onPress={navigateToProfile}>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
         <Ionicons name="person-outline" size={30} color="#333" />
       </TouchableOpacity>
-      
-      {/* Feedback Button */}
-      <TouchableOpacity style={styles.navButton} onPress={navigateToFeedback}>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Feedback')}>
         <Ionicons name="chatbubble-outline" size={30} color="#333" />
       </TouchableOpacity>
     </View>

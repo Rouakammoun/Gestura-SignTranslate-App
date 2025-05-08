@@ -1,275 +1,172 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { RNCamera } from 'react-native-camera';
+// Add these declarations in a global .d.ts file or at the top of this file
+// to satisfy TypeScript for modules without types
+declare module 'expo-video-thumbnails';
+declare module 'react-native-tflite';
+
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Video, AVPlaybackStatus } from 'expo-av';
+import * as VideoThumbnails from 'expo-video-thumbnails';
+// require the module to ensure functions are available
+// require the module correctly
+const TfliteModule = require('react-native-tflite').default || require('react-native-tflite');
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as ImagePicker from 'expo-image-picker';
-import { useNavigation } from '@react-navigation/native';
-import NavBar from '../components/NavBar';
 import { Picker } from '@react-native-picker/picker';
+import NavBar from '../components/NavBar';
 
-const VideoTranslationScreen = () => {
-  const navigation = useNavigation();
-  const [cameraOpen, setCameraOpen] = useState(false);
+const tflite = new TfliteModule();
+
+export default function VideoTranslationScreen({ navigation }: { navigation: any }) {
   const [videoUri, setVideoUri] = useState<string | null>(null);
-  const [translatedText, setTranslatedText] = useState("");
-  const cameraRef = useRef<RNCamera | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState('ASL');
+  const [durationMs, setDurationMs] = useState<number>(0);
+  const [translatedText, setTranslatedText] = useState<string>('Translated text will appear here');
+  const [processing, setProcessing] = useState<boolean>(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<'TunSL' | 'ASL' | 'ARSL'>('TunSL');
+  const videoRef = useRef<any>(null);
 
-  const handleGoBack = () => {
-    navigation.goBack();
-  };
+  useEffect(() => {
+    // Reset placeholder when switching language
+    setTranslatedText('Translated text will appear here');
+    tflite.loadModel(
+      {
+        model: `models/${selectedLanguage}.tflite`,
+        labels: `models/${selectedLanguage}_labels.txt`,
+      },
+      (err: any) => {
+        if (err) console.error('TFLite load error:', err);
+      }
+    );
+  }, [selectedLanguage]);
 
-  const handleTranslation = () => {
-    setTranslatedText("This is the translated text from the video.");
-  };
-
-  const pickVideoFromGallery = async () => {
+  const pickVideo = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      allowsEditing: true,
-      quality: 1,
+      allowsEditing: false,
     });
-
-    if (result && result.assets && result.assets[0].uri) {
+    if (!result.canceled && result.assets?.[0]?.uri) {
       setVideoUri(result.assets[0].uri);
-      setCameraOpen(false);
+      setTranslatedText('Translated text will appear here');
     }
   };
 
-  const startRecording = async () => {
-    if (cameraRef.current) {
-      const options = { quality: RNCamera.Constants.VideoStabilization.standard, maxDuration: 60 };
-      const data = await cameraRef.current.recordAsync(options);
-      setVideoUri(data.uri);
+  const onLoad = (status: AVPlaybackStatus) => {
+    if ('durationMillis' in status && status.durationMillis) {
+      setDurationMs(status.durationMillis);
     }
   };
 
-  const stopRecording = () => {
-    if (cameraRef.current) {
-      cameraRef.current.stopRecording();
+  const handleTranslate = async () => {
+    if (!videoUri || processing) return;
+    setProcessing(true);
+    const frameInterval = 500;
+    let buffer: string[] = [];
+    const sentence: string[] = [];
+
+    for (let t = 0; t < durationMs; t += frameInterval) {
+      try {
+        const { uri: thumbUri } = await VideoThumbnails.getThumbnailAsync(videoUri, { time: t });
+        buffer.push(thumbUri);
+        if (buffer.length === 10) {
+          const preds = await Promise.all(
+            buffer.map(path =>
+              new Promise<any>((res, rej) => {
+                tflite.runModelOnImage(
+                  { path, imageMean: 0, imageStd: 255, numResults: 1, threshold: 0.1 },
+                  (err: any, res_: any) => (err ? rej(err) : res(res_[0]))
+                );
+              })
+            )
+          );
+          const label = preds
+            .map((p: any) => p.label as string)
+            .reduce((a: string, b: string) =>
+              preds.filter((x: any) => x.label === a).length >= preds.filter((x: any) => x.label === b).length ? a : b
+            );
+          sentence.push(label);
+          buffer = [];
+        }
+      } catch (e) {
+        console.warn('Thumbnail error:', e);
+      }
     }
+
+    setTranslatedText(sentence.join(' '));
+    setProcessing(false);
   };
 
   return (
     <LinearGradient colors={['#88C5A6', '#396F7A']} style={styles.container}>
-      {/* Close button in top left */}
-      <TouchableOpacity onPress={handleGoBack} style={styles.closeButton}>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
         <Ionicons name="close" size={32} color="#003C47" />
       </TouchableOpacity>
 
-      {/* Header */}
       <View style={styles.headerBox}>
         <Text style={styles.header}>Video Translation</Text>
       </View>
 
-      {/* Video selection buttons */}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.actionButton} onPress={pickVideoFromGallery}>
-          <Ionicons name="folder-open" size={24} color="#003C47" />
-          <Text style={styles.buttonText}>Upload Video</Text>
-        </TouchableOpacity>
-
-      </View>
-
-      {/* Video display area */}
-      <View style={styles.videoContainer}>
-        {cameraOpen && !videoUri ? (
-          <>
-            <RNCamera
-              style={styles.camera}
-              type={RNCamera.Constants.Type.back}
-              ref={cameraRef}
-              captureAudio={true}
-            />
-            <View style={styles.recordingControls}>
-              <TouchableOpacity style={styles.recordButton} onPress={startRecording}>
-                <Ionicons name="radio-button-on" size={40} color="#FF0000" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.stopButton} onPress={stopRecording}>
-                <Ionicons name="square" size={30} color="#003C47" />
-              </TouchableOpacity>
-            </View>
-          </>
-        ) : videoUri ? (
-          <>
-            <Text style={styles.videoPlaceholder}>Video selected</Text>
-            <TouchableOpacity style={styles.translateButton} onPress={handleTranslation}>
-              <Ionicons name="language" size={24} color="#003C47" />
-              <Text style={styles.buttonText}>Translate to Text</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <Text style={styles.videoPlaceholder}>No video selected</Text>
-        )}
-      </View>
       <View style={styles.pickerContainer}>
-  <Picker
-    selectedValue={selectedLanguage}
-    onValueChange={(itemValue) => setSelectedLanguage(itemValue)}
-    style={styles.picker}
-    dropdownIconColor="#003C47"
-  >
-    <Picker.Item label="ASL (American Sign Language)" value="ASL" />
-    <Picker.Item label="ARSL (Arabic Sign Language)" value="ARSL" />
-    <Picker.Item label="TunSL (Tunisian Sign Language)" value="TunSL" />
-  </Picker>
-</View>
+        <Picker
+          selectedValue={selectedLanguage}
+          onValueChange={(value) => setSelectedLanguage(value as any)}
+          style={styles.picker}
+          dropdownIconColor="#003C47"
+        >
+          <Picker.Item label="Tunisian Sign Language (TunSL)" value="TunSL" />
+          <Picker.Item label="American Sign Language (ASL)" value="ASL" />
+          <Picker.Item label="Arabic Sign Language (ARSL)" value="ARSL" />
+        </Picker>
+      </View>
 
-      {/* Translation result */}
+      <TouchableOpacity style={styles.uploadBtn} onPress={pickVideo}>
+        <Ionicons name="folder-open" size={24} color="#003C47" />
+        <Text style={styles.uploadText}>Upload Video</Text>
+      </TouchableOpacity>
+
+      {videoUri && (
+        <Video
+          ref={videoRef}
+          source={{ uri: videoUri }}
+          style={styles.videoPlayer}
+          onLoad={onLoad}
+        />
+      )}
+
+      <TouchableOpacity
+        style={[styles.translateBtn, processing && styles.disabled]}
+        onPress={handleTranslate}
+        disabled={processing}
+      >
+        {processing ? (
+          <ActivityIndicator color="#003C47" />
+        ) : (
+          <Text style={styles.translateText}>Translate</Text>
+        )}
+      </TouchableOpacity>
+
       <View style={styles.textContainer}>
-        <Text style={styles.translatedText}>
-          {translatedText || "Translated text will appear here"}
-        </Text>
-        <TouchableOpacity style={styles.speakButton}>
-          <Ionicons name="volume-high" size={20} color="#003C47" />
-        </TouchableOpacity>
+        <Text style={styles.translatedText}>{translatedText}</Text>
       </View>
 
       <NavBar />
     </LinearGradient>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 40,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    zIndex: 1,
-  },
-  headerBox: {
-    backgroundColor: '#B2E8D7',
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    borderRadius: 20,
-    marginBottom: 40,
-    borderWidth: 2,
-    borderColor: '#A2E9C5',
-  },
-  header: {
-    fontSize: 26,
-    color: '#003C47',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center', // center horizontally
-    width: '100%',
-    marginBottom: 20,
-    gap: 5,
-  },
-  actionButton: {
-    backgroundColor: '#B2E8D7',
-    padding: 15,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#A2E9C5',
-  },
-  buttonText: {
-    justifyContent:'center',
-    color: '#003C47',
-    fontSize: 16,
-    marginLeft: 10,
-    fontWeight: 'bold',
-  },
-  videoContainer: {
-    width: '80%',
-    height: 120,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 4,
-    borderColor: '#A2E9C5',
-    marginBottom: 20,
-  },
-  camera: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 15,
-  },
-  recordingControls: {
-    position: 'absolute',
-    bottom: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '60%',
-  },
-  recordButton: {
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    borderRadius: 40,
-    padding: 10,
-  },
-  stopButton: {
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    borderRadius: 50,
-    padding: 10,
-  },
-  videoPlaceholder: {
-    color: '#003C47',
-    fontSize: 16,
-    marginBottom: 20,
-    fontWeight: 'bold',
-  },
-  translateButton: {
-    backgroundColor: '#B2E8D7',
-    padding: 15,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#A2E9C5',
-  },
-  textContainer: {
-    width: '80%',
-    height:'20%',
-    minHeight: 100,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    borderWidth: 4,
-    borderColor: '#A2E9C5',
-    marginBottom: 20,
-  },
-  translatedText: {
-    color: '#003C47',
-    fontSize: 18,
-    textAlign: 'center',
-  },
-  speakButton: {
-    marginTop: 23,
-    backgroundColor: '#B2E8D7',
-    borderRadius: 50,
-    padding: 10,
-    borderWidth: 2,
-    borderColor: '#A2E9C5',
-  },
-  pickerContainer: {
-    width: '80%',
-    backgroundColor: '#B2E8D7',
-    borderRadius: 20,
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: '#A2E9C5',
-  },
-  picker: {
-    color: '#003C47',
-    height: 50,
-    width: '100%',
-  },
-  
+  container: { flex: 1, paddingTop: 40, alignItems: 'center' },
+  closeButton: { position: 'absolute', top: 40, left: 20 },
+  headerBox: { backgroundColor: '#B2E8D7', padding: 10, borderRadius: 20, marginBottom: 20 },
+  header: { fontSize: 24, color: '#003C47', fontWeight: 'bold' },
+  pickerContainer: { width: '80%', backgroundColor: '#B2E8D7', borderRadius: 20, marginBottom: 20, borderWidth: 2, borderColor: '#A2E9C5' },
+  picker: { color: '#003C47', height: 50, width: '100%' },
+  uploadBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#B2E8D7', padding: 15, borderRadius: 20, marginBottom: 10, borderWidth: 2, borderColor: '#A2E9C5' },
+  uploadText: { marginLeft: 10, color: '#003C47', fontWeight: 'bold' },
+  videoPlayer: { width: '90%', height: 200, borderRadius: 15, marginBottom: 20 },
+  translateBtn: { backgroundColor: '#396F7A', padding: 15, borderRadius: 20, marginBottom: 20 },
+  disabled: { opacity: 0.6 },
+  translateText: { color: '#fff', fontWeight: 'bold' },
+  textContainer: { width: '90%', minHeight: 100, backgroundColor: '#fff', borderRadius: 20, padding: 20, borderWidth: 2, borderColor: '#A2E9C5' },
+  translatedText: { color: '#003C47', fontSize: 18, textAlign: 'center' },
 });
-
-export default VideoTranslationScreen;
